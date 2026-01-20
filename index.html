@@ -18,10 +18,10 @@
       <h1>MNYC Work Management</h1>
       <p>Daily Claim Workforce Management</p>
     </div>
-    <form class="login-form" id="agentLoginForm" onsubmit="return false;">
+    <form class="login-form" id="loginForm" onsubmit="handleLogin(event); return false;">
       <div class="form-group">
-        <label><i class="fas fa-id-badge"></i> Employee ID</label>
-        <input type="text" id="loginId" placeholder="Enter your Employee ID" required />
+        <label><i class="fas fa-id-badge"></i> Username</label>
+        <input type="text" id="loginId" placeholder="Enter your username" required />
       </div>
       <div class="form-group">
         <label><i class="fas fa-lock"></i> Password</label>
@@ -31,50 +31,10 @@
         <i class="fas fa-exclamation-circle"></i>
         <span id="loginErrorText">Invalid credentials</span>
       </div>
-      <button type="button" class="btn btn-primary btn-full" onclick="handleLogin(event)">
-        <i class="fas fa-sign-in-alt"></i> Login as Agent
+      <button type="submit" class="btn btn-primary btn-full">
+        <i class="fas fa-sign-in-alt"></i> Login
       </button>
     </form>
-    <div class="login-divider">
-      <span>or</span>
-    </div>
-    <button class="btn btn-outline btn-full" onclick="showAdminLogin()">
-      <i class="fas fa-user-shield"></i> Login as Admin
-    </button>
-  </div>
-</div>
-
-<!-- Admin Login Screen (Separate full-screen login) -->
-<div class="login-screen admin-login-screen" id="adminLoginModal" style="display: none;">
-  <div class="login-container admin-login-container">
-    <div class="login-header admin-login-header">
-      <i class="fas fa-user-shield"></i>
-      <h1>Admin Portal</h1>
-      <p>MNYC Work Management - Administrator Access</p>
-    </div>
-    <form class="login-form" id="adminLoginForm" onsubmit="return false;">
-      <div class="form-group">
-        <label><i class="fas fa-user"></i> Admin Username</label>
-        <input type="text" id="adminLoginId" placeholder="Enter admin username" required />
-      </div>
-      <div class="form-group">
-        <label><i class="fas fa-lock"></i> Password</label>
-        <input type="password" id="adminLoginPassword" placeholder="Enter admin password" required />
-      </div>
-      <div class="login-error" id="adminLoginError" style="display: none;">
-        <i class="fas fa-exclamation-circle"></i>
-        <span id="adminLoginErrorText">Invalid credentials</span>
-      </div>
-      <button type="button" class="btn btn-primary btn-full" onclick="handleAdminLogin(event)">
-        <i class="fas fa-sign-in-alt"></i> Login as Admin
-      </button>
-    </form>
-    <div class="login-divider">
-      <span>or</span>
-    </div>
-    <button class="btn btn-outline btn-full" onclick="closeAdminLogin()">
-      <i class="fas fa-arrow-left"></i> Back to Agent Login
-    </button>
   </div>
 </div>
 

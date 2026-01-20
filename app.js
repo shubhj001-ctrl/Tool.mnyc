@@ -117,12 +117,12 @@ function updateEmployeeMap() {
 
 // ==================== AUTHENTICATION ====================
 window.handleLogin = async function(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
   
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
-  const loginBtn = document.querySelector('#loginScreen button[type="submit"]');
+  const loginBtn = document.querySelector('#loginScreen .btn-primary');
   
   if (!loginId || !password) {
     loginError.style.display = "flex";
@@ -139,23 +139,18 @@ window.handleLogin = async function(event) {
   try {
     const user = await apiCall('/api/login', 'POST', { username: loginId, password });
     
-    // Check if trying to login as admin from agent login
-    if (user.role === 'admin') {
-      loginError.style.display = "flex";
-      document.getElementById("loginErrorText").textContent = "No user found";
-      loginBtn.innerHTML = originalBtnText;
-      loginBtn.disabled = false;
-      return;
-    }
-    
     currentUser = user;
     
     // Load users first to get proper mapping
     await loadUsers();
     
-    // Map user id dynamically
-    const userIndex = allUsers.findIndex(u => u.odoo_id === currentUser.odoo_id);
-    currentUser.id = userIndex >= 0 ? `EMP00${userIndex + 1}` : `EMP001`;
+    // Map user id dynamically based on role
+    if (currentUser.role === 'admin') {
+      currentUser.id = 'ADMIN001';
+    } else {
+      const userIndex = allUsers.findIndex(u => u.odoo_id === currentUser.odoo_id);
+      currentUser.id = userIndex >= 0 ? `EMP00${userIndex + 1}` : `EMP001`;
+    }
     
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
     loginError.style.display = "none";
@@ -163,67 +158,7 @@ window.handleLogin = async function(event) {
   } catch (error) {
     console.error('Login error:', error);
     loginError.style.display = "flex";
-    document.getElementById("loginErrorText").textContent = error.message || "Invalid Employee ID or Password";
-    loginBtn.innerHTML = originalBtnText;
-    loginBtn.disabled = false;
-  }
-};
-
-// Admin login functions
-window.showAdminLogin = function() {
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("adminLoginModal").style.display = "flex";
-  document.getElementById("adminLoginId").value = "";
-  document.getElementById("adminLoginPassword").value = "";
-  document.getElementById("adminLoginError").style.display = "none";
-};
-
-window.closeAdminLogin = function() {
-  document.getElementById("adminLoginModal").style.display = "none";
-  document.getElementById("loginScreen").style.display = "flex";
-};
-
-window.handleAdminLogin = async function(event) {
-  event.preventDefault();
-  
-  const loginId = document.getElementById("adminLoginId").value.toLowerCase().trim();
-  const password = document.getElementById("adminLoginPassword").value;
-  const loginError = document.getElementById("adminLoginError");
-  const loginBtn = document.querySelector('#adminLoginModal button[type="submit"]');
-  
-  if (!loginId || !password) {
-    loginError.style.display = "flex";
-    document.getElementById("adminLoginErrorText").textContent = "Please enter both username and password";
-    return;
-  }
-  
-  // Show loading state
-  const originalBtnText = loginBtn.innerHTML;
-  loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-  loginBtn.disabled = true;
-  loginError.style.display = "none";
-  
-  try {
-    const user = await apiCall('/api/login', 'POST', { username: loginId, password });
-    
-    if (user.role !== 'admin') {
-      loginError.style.display = "flex";
-      document.getElementById("adminLoginErrorText").textContent = "This account is not an admin";
-      loginBtn.innerHTML = originalBtnText;
-      loginBtn.disabled = false;
-      return;
-    }
-    
-    currentUser = user;
-    currentUser.id = 'ADMIN001';
-    localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
-    // Hide admin login screen and show app
-    document.getElementById("adminLoginModal").style.display = "none";
-    showApp();
-  } catch (error) {
-    console.error('Admin login error:', error);
-    loginError.style.display = "flex";
-    document.getElementById("adminLoginErrorText").textContent = error.message || "Invalid admin credentials";
+    document.getElementById("loginErrorText").textContent = error.message || "Invalid credentials";
     loginBtn.innerHTML = originalBtnText;
     loginBtn.disabled = false;
   }
@@ -233,7 +168,6 @@ function logout() {
   currentUser = null;
   localStorage.removeItem("mnyc_currentUser");
   appContainer.style.display = "none";
-  document.getElementById("adminLoginModal").style.display = "none";
   loginScreen.style.display = "flex";
   document.getElementById("loginId").value = "";
   document.getElementById("loginPassword").value = "";
