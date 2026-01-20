@@ -46,12 +46,34 @@ async function apiCall(endpoint, method = 'GET', data = null) {
   };
   if (data) options.body = JSON.stringify(data);
   
-  const response = await fetch(`${API_BASE}${endpoint}`, options);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'API Error');
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, options);
+    
+    // Check if response has content
+    const text = await response.text();
+    if (!text) {
+      throw new Error('Server returned empty response. Database may be connecting...');
+    }
+    
+    // Try to parse JSON
+    let jsonData;
+    try {
+      jsonData = JSON.parse(text);
+    } catch (e) {
+      throw new Error('Server error. Please try again.');
+    }
+    
+    if (!response.ok) {
+      throw new Error(jsonData.error || 'API Error');
+    }
+    
+    return jsonData;
+  } catch (error) {
+    if (error.message.includes('fetch')) {
+      throw new Error('Cannot connect to server');
+    }
+    throw error;
   }
-  return response.json();
 }
 
 async function loadClaims() {

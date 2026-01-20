@@ -62,6 +62,16 @@ const Claim = mongoose.model('Claim', claimSchema);
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+    
+    // Check if database is connected
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ error: 'Database connecting... Please wait and try again.' });
+    }
+    
     const user = await User.findOne({ odoo_id: username.toLowerCase() });
     
     if (!user || user.password !== password) {
@@ -77,7 +87,8 @@ app.post('/api/login', async (req, res) => {
       color: user.color
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 });
 
