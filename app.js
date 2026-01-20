@@ -429,7 +429,6 @@ function render() {
     `;
     tbody.appendChild(tr);
   });
-  });
   
   document.getElementById("claimCount").textContent = `${filteredClaims.length} claim${filteredClaims.length !== 1 ? 's' : ''}`;
   updateStats();
