@@ -1,11 +1,7 @@
-// ==================== USER & AUTH SYSTEM ====================
-const users = {
-  "yashpal": { id: "ADMIN001", name: "Yashpal", password: "admin123", role: "admin", avatar: "Y", color: "#7c3aed" },
-  "shubham": { id: "EMP001", name: "Shubham", password: "pass123", role: "agent", avatar: "S", color: "#3b82f6" },
-  "ravi": { id: "EMP002", name: "Ravi", password: "pass123", role: "agent", avatar: "R", color: "#10b981" },
-  "chirag": { id: "EMP003", name: "Chirag", password: "pass123", role: "agent", avatar: "C", color: "#f59e0b" }
-};
+// ==================== API BASE URL ====================
+const API_BASE = window.location.origin;
 
+// ==================== USER & AUTH SYSTEM ====================
 const employeeMap = {
   "EMP001": { name: "Shubham", avatar: "S", color: "#3b82f6" },
   "EMP002": { name: "Ravi", avatar: "R", color: "#10b981" },
@@ -14,6 +10,7 @@ const employeeMap = {
 
 let currentUser = null;
 let importedData = [];
+let claims = [];
 
 // ==================== DOM ELEMENTS ====================
 const tbody = document.getElementById("claimsBody");
@@ -35,28 +32,60 @@ const toastMessage = document.getElementById("toastMessage");
 const loginScreen = document.getElementById("loginScreen");
 const appContainer = document.getElementById("appContainer");
 
-let activeIndex = null;
-let assignIndex = null;
-let shareIndex = null;
+let activeClaimId = null;
+let assignClaimId = null;
+let shareClaimId = null;
 let currentFilter = "all";
 let agentQueue = "my"; // 'my', 'shared', 'all'
-let claims = JSON.parse(localStorage.getItem("mnyc_claims")) || [];
+
+// ==================== API FUNCTIONS ====================
+async function apiCall(endpoint, method = 'GET', data = null) {
+  const options = {
+    method,
+    headers: { 'Content-Type': 'application/json' }
+  };
+  if (data) options.body = JSON.stringify(data);
+  
+  const response = await fetch(`${API_BASE}${endpoint}`, options);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'API Error');
+  }
+  return response.json();
+}
+
+async function loadClaims() {
+  try {
+    claims = await apiCall('/api/claims');
+    render();
+    updateEmployeeStats();
+  } catch (error) {
+    showToast('Failed to load claims: ' + error.message, 'error');
+  }
+}
 
 // ==================== AUTHENTICATION ====================
-function handleLogin(event) {
+async function handleLogin(event) {
   event.preventDefault();
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
   
-  if (users[loginId] && users[loginId].password === password) {
-    currentUser = users[loginId];
+  try {
+    const user = await apiCall('/api/login', 'POST', { username: loginId, password });
+    currentUser = user;
+    // Map user id for compatibility
+    if (currentUser.role === 'agent') {
+      currentUser.id = 'EMP00' + (currentUser.odoo_id === 'shubham' ? '1' : currentUser.odoo_id === 'ravi' ? '2' : '3');
+    } else {
+      currentUser.id = 'ADMIN001';
+    }
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
     loginError.style.display = "none";
     showApp();
-  } else {
+  } catch (error) {
     loginError.style.display = "flex";
-    document.getElementById("loginErrorText").textContent = "Invalid Employee ID or Password";
+    document.getElementById("loginErrorText").textContent = error.message || "Invalid Employee ID or Password";
   }
 }
 
@@ -96,8 +125,8 @@ function showApp() {
     document.getElementById("totalLabel").textContent = "My Claims";
   }
   
-  render();
-  updateEmployeeStats();
+  // Load claims from server
+  loadClaims();
 }
 
 // Check for existing session
@@ -107,13 +136,6 @@ function checkSession() {
     currentUser = JSON.parse(savedUser);
     showApp();
   }
-}
-
-// ==================== DATA FUNCTIONS ====================
-function saveData() {
-  localStorage.setItem("mnyc_claims", JSON.stringify(claims));
-  // Notify other tabs about the update
-  localStorage.setItem('mnyc_lastUpdate', Date.now().toString());
 }
 
 function showToast(message, type = "success") {
@@ -305,7 +327,7 @@ function getFilteredClaims() {
     }
     
     return matchesSearch && matchesFilter && matchesAgent;
-  }).map((c, i) => ({ ...c, originalIndex: claims.indexOf(c) }));
+  });
 }
 
 // ==================== RENDER FUNCTION ====================
@@ -323,6 +345,7 @@ function render() {
   }
   
   filteredClaims.forEach((c) => {
+    const claimId = c._id;
     const historyCount = c.history ? c.history.length : 0;
     const isOwnClaim = c.assignedTo === currentUser.id;
     const isSharedWithMe = c.sharedWith && c.sharedWith.includes(currentUser.id);
@@ -353,27 +376,27 @@ function render() {
       <td>${c.dateWorked ? new Date(c.dateWorked).toLocaleString() : "-"}</td>
       <td>${c.nextFollowUp ? new Date(c.nextFollowUp).toLocaleDateString() : "-"}</td>
       <td>
-        <span class="history-count" onclick="openHistoryModal(${c.originalIndex})" title="View history">
+        <span class="history-count" onclick="openHistoryModal('${claimId}')" title="View history">
           <i class="fas fa-history"></i> ${historyCount}
         </span>
       </td>
       <td>
         <div class="action-buttons">
           ${!isPaid && canWork ? `
-            <button class="btn-icon btn-icon-primary" onclick="openModal(${c.originalIndex})" title="Work on claim">
+            <button class="btn-icon btn-icon-primary" onclick="openModal('${claimId}')" title="Work on claim">
               <i class="fas fa-edit"></i>
             </button>
           ` : ''}
           ${!isPaid && isOwnClaim && currentUser.role === "agent" ? `
-            <button class="btn-icon btn-icon-share" onclick="openShareModal(${c.originalIndex})" title="Share claim">
+            <button class="btn-icon btn-icon-share" onclick="openShareModal('${claimId}')" title="Share claim">
               <i class="fas fa-share-alt"></i>
             </button>
           ` : ''}
           ${currentUser.role === "admin" ? `
-            <button class="btn-icon btn-icon-warning" onclick="openAssignModal(${c.originalIndex})" title="Assign claim">
+            <button class="btn-icon btn-icon-warning" onclick="openAssignModal('${claimId}')" title="Assign claim">
               <i class="fas fa-user-plus"></i>
             </button>
-            <button class="btn-icon btn-icon-danger" onclick="deleteClaim(${c.originalIndex})" title="Delete claim">
+            <button class="btn-icon btn-icon-danger" onclick="deleteClaim('${claimId}')" title="Delete claim">
               <i class="fas fa-trash"></i>
             </button>
           ` : ''}
@@ -388,10 +411,16 @@ function render() {
   updateEmployeeStats();
 }
 
+// Helper function to find claim by ID
+function findClaimById(id) {
+  return claims.find(c => c._id === id);
+}
+
 // ==================== MODAL FUNCTIONS ====================
-window.openModal = function(index) {
-  activeIndex = index;
-  const claim = claims[index];
+window.openModal = function(claimId) {
+  activeClaimId = claimId;
+  const claim = findClaimById(claimId);
+  if (!claim) return;
   
   claimSummary.innerHTML = `
     <div class="claim-summary-item">
@@ -422,8 +451,9 @@ window.closeModal = function() {
   modal.style.display = "none";
 };
 
-window.openHistoryModal = function(index) {
-  const claim = claims[index];
+window.openHistoryModal = function(claimId) {
+  const claim = findClaimById(claimId);
+  if (!claim) return;
   
   historyClaimSummary.innerHTML = `
     <div class="claim-summary-item">
@@ -491,7 +521,7 @@ window.closeAddClaimModal = function() {
   addClaimModal.style.display = "none";
 };
 
-window.saveNewClaim = function() {
+window.saveNewClaim = async function() {
   const claimNo = document.getElementById("newClaimNo").value.trim();
   const patient = document.getElementById("newPatient").value.trim();
   const balance = parseFloat(document.getElementById("newBalance").value);
@@ -502,28 +532,32 @@ window.saveNewClaim = function() {
     return;
   }
   
-  claims.push({
-    claimNo,
-    patient,
-    balance,
-    assignedTo: assignee || null,
-    sharedWith: [],
-    status: null,
-    dateWorked: null,
-    nextFollowUp: null,
-    history: []
-  });
-  
-  saveData();
-  closeAddClaimModal();
-  render();
-  showToast("New claim added successfully!");
+  try {
+    await apiCall('/api/claims', 'POST', {
+      claimNo,
+      patient,
+      balance,
+      assignedTo: assignee || null,
+      sharedWith: [],
+      status: null,
+      dateWorked: null,
+      nextFollowUp: null,
+      history: []
+    });
+    
+    closeAddClaimModal();
+    loadClaims();
+    showToast("New claim added successfully!");
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 };
 
 // ==================== ASSIGN FUNCTIONS ====================
-window.openAssignModal = function(index) {
-  assignIndex = index;
-  const claim = claims[index];
+window.openAssignModal = function(claimId) {
+  assignClaimId = claimId;
+  const claim = findClaimById(claimId);
+  if (!claim) return;
   
   document.getElementById("assignClaimSummary").innerHTML = `
     <div class="claim-summary-item">
@@ -548,21 +582,28 @@ window.closeAssignModal = function() {
   assignModal.style.display = "none";
 };
 
-window.saveAssignment = function() {
+window.saveAssignment = async function() {
   const newAssignee = document.getElementById("assignAgentSelect").value;
-  claims[assignIndex].assignedTo = newAssignee || null;
-  // Clear shares when reassigning
-  claims[assignIndex].sharedWith = [];
-  saveData();
-  closeAssignModal();
-  render();
-  showToast(`Claim assigned to ${employeeMap[newAssignee]?.name || 'Unassigned'}`);
+  
+  try {
+    await apiCall(`/api/claims/${assignClaimId}`, 'PUT', {
+      assignedTo: newAssignee || null,
+      sharedWith: []
+    });
+    
+    closeAssignModal();
+    loadClaims();
+    showToast(`Claim assigned to ${employeeMap[newAssignee]?.name || 'Unassigned'}`);
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 };
 
 // ==================== SHARE FUNCTIONS ====================
-window.openShareModal = function(index) {
-  shareIndex = index;
-  const claim = claims[index];
+window.openShareModal = function(claimId) {
+  shareClaimId = claimId;
+  const claim = findClaimById(claimId);
+  if (!claim) return;
   
   document.getElementById("shareClaimSummary").innerHTML = `
     <div class="claim-summary-item">
@@ -624,7 +665,7 @@ window.closeShareModal = function() {
   shareModal.style.display = "none";
 };
 
-window.saveShare = function() {
+window.saveShare = async function() {
   const checkboxes = document.querySelectorAll("#shareCheckboxes input[type='checkbox']");
   const selectedAgents = [];
   
@@ -634,26 +675,35 @@ window.saveShare = function() {
     }
   });
   
-  claims[shareIndex].sharedWith = selectedAgents;
-  saveData();
-  closeShareModal();
-  render();
-  
-  if (selectedAgents.length > 0) {
-    const names = selectedAgents.map(id => employeeMap[id]?.name).join(", ");
-    showToast(`Claim shared with: ${names}`);
-  } else {
-    showToast("Claim sharing removed");
+  try {
+    await apiCall(`/api/claims/${shareClaimId}`, 'PUT', {
+      sharedWith: selectedAgents
+    });
+    
+    closeShareModal();
+    loadClaims();
+    
+    if (selectedAgents.length > 0) {
+      const names = selectedAgents.map(id => employeeMap[id]?.name).join(", ");
+      showToast(`Claim shared with: ${names}`);
+    } else {
+      showToast("Claim sharing removed");
+    }
+  } catch (error) {
+    showToast(error.message, "error");
   }
 };
 
 // ==================== DELETE FUNCTION ====================
-window.deleteClaim = function(index) {
+window.deleteClaim = async function(claimId) {
   if (confirm("Are you sure you want to delete this claim?")) {
-    claims.splice(index, 1);
-    saveData();
-    render();
-    showToast("Claim deleted successfully!");
+    try {
+      await apiCall(`/api/claims/${claimId}`, 'DELETE');
+      loadClaims();
+      showToast("Claim deleted successfully!");
+    } catch (error) {
+      showToast(error.message, "error");
+    }
   }
 };
 
@@ -770,7 +820,7 @@ function showImportPreview() {
   document.getElementById("importBtn").disabled = false;
 }
 
-window.importClaims = function() {
+window.importClaims = async function() {
   const newClaims = importedData.map(row => ({
     claimNo: row.claimNo,
     patient: row.patient,
@@ -783,15 +833,18 @@ window.importClaims = function() {
     history: []
   }));
   
-  claims = [...claims, ...newClaims];
-  saveData();
-  closeImportModal();
-  render();
-  showToast(`${newClaims.length} claims imported successfully!`);
+  try {
+    const result = await apiCall('/api/claims/bulk', 'POST', newClaims);
+    closeImportModal();
+    loadClaims();
+    showToast(`${result.imported || newClaims.length} claims imported successfully!`);
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 };
 
 // ==================== SAVE WORK ====================
-saveBtn.onclick = () => {
+saveBtn.onclick = async () => {
   if (!remarksInput.value.trim()) {
     showToast("Remarks are required", "error");
     return;
@@ -799,14 +852,17 @@ saveBtn.onclick = () => {
   
   const now = new Date();
   const followUpDays = parseInt(followUpDaysInput.value) || 14;
-  const claim = claims[activeIndex];
+  const claim = findClaimById(activeClaimId);
   
-  if (!claim.history) {
-    claim.history = [];
+  if (!claim) {
+    showToast("Claim not found", "error");
+    return;
   }
   
+  const history = claim.history || [];
+  
   // Add the new follow-up entry to history
-  claim.history.push({
+  history.push({
     remarks: remarksInput.value,
     status: statusInput.value,
     dateWorked: now,
@@ -814,148 +870,36 @@ saveBtn.onclick = () => {
     workedBy: currentUser.name
   });
   
-  // Update current state
-  claim.remarks = remarksInput.value;
-  claim.status = statusInput.value;
-  claim.dateWorked = now;
-  claim.nextFollowUp = statusInput.value === "paid" ? null : calculateNextFollowUp(now, followUpDays);
-  claim.lastWorkedBy = currentUser.id;
-  
-  saveData();
-  modal.style.display = "none";
-  render();
-  showToast("Claim updated successfully!");
+  try {
+    await apiCall(`/api/claims/${activeClaimId}`, 'PUT', {
+      history: history,
+      status: statusInput.value,
+      dateWorked: now,
+      nextFollowUp: statusInput.value === "paid" ? null : calculateNextFollowUp(now, followUpDays),
+      lastWorkedBy: currentUser.id
+    });
+    
+    modal.style.display = "none";
+    loadClaims();
+    showToast("Claim updated successfully!");
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 };
 
-// ==================== INITIALIZATION ====================
-// Initialize with sample data if empty
-if (!claims.length) {
-  claims = [
-    { 
-      claimNo: "CLM001", 
-      patient: "John Doe", 
-      balance: 750,
-      assignedTo: "EMP001",
-      sharedWith: ["EMP002"],
-      status: "waiting",
-      dateWorked: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      nextFollowUp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      history: [
-        {
-          remarks: "Initial follow-up call made. Patient aware of balance.",
-          status: "waiting",
-          dateWorked: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-          nextFollowUp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          workedBy: "Shubham"
-        },
-        {
-          remarks: "Ravi followed up while Shubham was out. Patient requested more time.",
-          status: "waiting",
-          dateWorked: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          nextFollowUp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-          workedBy: "Ravi"
-        }
-      ]
-    },
-    { 
-      claimNo: "CLM002", 
-      patient: "Jane Smith", 
-      balance: 300,
-      assignedTo: "EMP002",
-      sharedWith: [],
-      status: "in-review",
-      dateWorked: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      nextFollowUp: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      history: [
-        {
-          remarks: "Claim submitted to insurance for review.",
-          status: "in-review",
-          dateWorked: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-          nextFollowUp: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-          workedBy: "Ravi"
-        }
-      ]
-    },
-    { 
-      claimNo: "CLM003", 
-      patient: "Robert Johnson", 
-      balance: 1200,
-      assignedTo: "EMP003",
-      sharedWith: ["EMP001", "EMP002"],
-      status: "unpaid",
-      dateWorked: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      nextFollowUp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      history: []
-    },
-    { 
-      claimNo: "CLM004", 
-      patient: "Emily Davis", 
-      balance: 450,
-      assignedTo: "EMP001",
-      sharedWith: [],
-      status: "paid",
-      dateWorked: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      nextFollowUp: null,
-      history: [
-        {
-          remarks: "Payment received in full.",
-          status: "paid",
-          dateWorked: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-          nextFollowUp: null,
-          workedBy: "Shubham"
-        }
-      ]
-    },
-    { 
-      claimNo: "CLM005", 
-      patient: "Michael Brown", 
-      balance: 890,
-      assignedTo: "EMP002",
-      sharedWith: [],
-      status: "waiting",
-      dateWorked: null,
-      nextFollowUp: null,
-      history: []
-    },
-    { 
-      claimNo: "CLM006", 
-      patient: "Sarah Wilson", 
-      balance: 560,
-      assignedTo: null,
-      sharedWith: [],
-      status: null,
-      dateWorked: null,
-      nextFollowUp: null,
-      history: []
-    }
-  ];
-  saveData();
-}
-
-// Check for existing session on page load
-checkSession();
-
-// ==================== REAL-TIME SYNC ====================
-// Listen for localStorage changes from other tabs
-window.addEventListener('storage', function(e) {
-  if (e.key === 'mnyc_claims') {
-    claims = JSON.parse(e.newValue) || [];
-    if (currentUser) {
-      render();
-      showToast('Data updated from another session', 'success');
-    }
-  }
-});
-
-// Refresh data function
+// ==================== REFRESH DATA ====================
 window.refreshData = function() {
-  claims = JSON.parse(localStorage.getItem("mnyc_claims")) || [];
-  render();
+  loadClaims();
   showToast('Data refreshed successfully!');
 };
 
-// Broadcast data changes to other tabs
-function broadcastUpdate() {
-  // Trigger storage event for other tabs by writing a timestamp
-  localStorage.setItem('mnyc_lastUpdate', Date.now().toString());
-}
+// ==================== INITIALIZATION ====================
+// Check for existing session on page load
+checkSession();
+
+// Auto-refresh every 30 seconds when app is visible
+setInterval(() => {
+  if (currentUser && document.visibilityState === 'visible') {
+    loadClaims();
+  }
+}, 30000);
