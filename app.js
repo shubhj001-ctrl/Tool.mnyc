@@ -39,6 +39,7 @@ let shareClaimId = null;
 let detailClaimId = null;
 let currentFilter = "all";
 let agentQueue = "my"; // 'my', 'shared', 'all'
+let selectedClaims = new Set(); // Track selected claim IDs for bulk actions
 
 // ==================== API FUNCTIONS ====================
 async function apiCall(endpoint, method = 'GET', data = null) {
@@ -136,18 +137,27 @@ function showApp() {
   const adminControls = document.getElementById("adminControls");
   const agentHeader = document.getElementById("agentHeader");
   const agentFilter = document.getElementById("agentFilter");
+  const checkboxHeader = document.getElementById("checkboxHeader");
   
   if (currentUser.role === "admin") {
     adminControls.style.display = "block";
     agentHeader.style.display = "none";
     agentFilter.style.display = "block";
     document.getElementById("totalLabel").textContent = "All Claims";
+    // Show checkbox column for bulk selection
+    if (checkboxHeader) checkboxHeader.style.display = "table-cell";
   } else {
     adminControls.style.display = "none";
     agentHeader.style.display = "flex";
     agentFilter.style.display = "none";
     document.getElementById("totalLabel").textContent = "My Claims";
+    // Hide checkbox column for agents
+    if (checkboxHeader) checkboxHeader.style.display = "none";
   }
+  
+  // Clear any previous selection
+  selectedClaims.clear();
+  updateBulkActionBar();
   
   // Load claims from server
   loadClaims();
@@ -385,13 +395,31 @@ function render() {
     
     const tr = document.createElement("tr");
     tr.className = isPaid ? "claim-paid" : getDueClass(c.nextFollowUp, c.status);
+    tr.dataset.claimId = claimId;
+    
+    // Add selected class if this claim is selected
+    if (selectedClaims.has(claimId)) {
+      tr.classList.add("selected");
+    }
+    
     if (isOwnClaim && currentUser.role === "agent") {
       tr.style.borderLeft = `4px solid ${currentUser.color}`;
     } else if (isSharedWithMe && currentUser.role === "agent") {
       tr.style.borderLeft = `4px solid #8b5cf6`;
     }
     
+    // Add checkbox column for admin
+    const checkboxCell = currentUser.role === "admin" ? `
+      <td class="checkbox-col">
+        <input type="checkbox" class="claim-checkbox" 
+               data-claim-id="${claimId}" 
+               ${selectedClaims.has(claimId) ? 'checked' : ''}
+               onchange="toggleClaimSelection('${claimId}', this.checked)" />
+      </td>
+    ` : '';
+    
     tr.innerHTML = `
+      ${checkboxCell}
       <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;"><strong>${c.claimNo}</strong></a></td>
       <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;">${c.patient}</a></td>
       <td><span class="balance-amount ${c.balance > 500 ? 'balance-high' : ''}">${formatCurrency(c.balance)}</span></td>
@@ -433,6 +461,8 @@ function render() {
   document.getElementById("claimCount").textContent = `${filteredClaims.length} claim${filteredClaims.length !== 1 ? 's' : ''}`;
   updateStats();
   updateEmployeeStats();
+  updateBulkActionBar();
+  updateSelectAllCheckbox();
 }
 
 // Helper function to find claim by ID
@@ -833,11 +863,187 @@ window.deleteClaim = async function(claimId) {
   if (confirm("Are you sure you want to delete this claim?")) {
     try {
       await apiCall(`/api/claims/${claimId}`, 'DELETE');
+      selectedClaims.delete(claimId); // Remove from selection if selected
       loadClaims();
       showToast("Claim deleted successfully!");
     } catch (error) {
       showToast(error.message, "error");
     }
+  }
+};
+
+// ==================== BULK SELECTION FUNCTIONS ====================
+window.toggleClaimSelection = function(claimId, isChecked) {
+  if (isChecked) {
+    selectedClaims.add(claimId);
+  } else {
+    selectedClaims.delete(claimId);
+  }
+  
+  // Update row highlight
+  const row = document.querySelector(`tr[data-claim-id="${claimId}"]`);
+  if (row) {
+    row.classList.toggle("selected", isChecked);
+  }
+  
+  updateBulkActionBar();
+  updateSelectAllCheckbox();
+};
+
+window.toggleSelectAll = function() {
+  const selectAllHeader = document.getElementById("selectAllHeader");
+  const selectAllClaims = document.getElementById("selectAllClaims");
+  const isChecked = selectAllHeader?.checked || selectAllClaims?.checked;
+  
+  const filteredClaims = getFilteredClaims();
+  const checkboxes = document.querySelectorAll(".claim-checkbox");
+  
+  checkboxes.forEach(cb => {
+    cb.checked = isChecked;
+  });
+  
+  if (isChecked) {
+    filteredClaims.forEach(c => selectedClaims.add(c._id));
+  } else {
+    filteredClaims.forEach(c => selectedClaims.delete(c._id));
+  }
+  
+  // Sync both checkboxes
+  if (selectAllHeader) selectAllHeader.checked = isChecked;
+  if (selectAllClaims) selectAllClaims.checked = isChecked;
+  
+  // Update row highlights
+  document.querySelectorAll("tr[data-claim-id]").forEach(row => {
+    row.classList.toggle("selected", isChecked);
+  });
+  
+  updateBulkActionBar();
+};
+
+function updateSelectAllCheckbox() {
+  const filteredClaims = getFilteredClaims();
+  const selectAllHeader = document.getElementById("selectAllHeader");
+  const selectAllClaims = document.getElementById("selectAllClaims");
+  
+  if (filteredClaims.length === 0) {
+    if (selectAllHeader) selectAllHeader.checked = false;
+    if (selectAllClaims) selectAllClaims.checked = false;
+    return;
+  }
+  
+  const allSelected = filteredClaims.every(c => selectedClaims.has(c._id));
+  const someSelected = filteredClaims.some(c => selectedClaims.has(c._id));
+  
+  if (selectAllHeader) {
+    selectAllHeader.checked = allSelected;
+    selectAllHeader.indeterminate = someSelected && !allSelected;
+  }
+  if (selectAllClaims) {
+    selectAllClaims.checked = allSelected;
+    selectAllClaims.indeterminate = someSelected && !allSelected;
+  }
+}
+
+function updateBulkActionBar() {
+  const bulkActionBar = document.getElementById("bulkActionBar");
+  const selectedCount = document.getElementById("selectedCount");
+  
+  if (!bulkActionBar) return;
+  
+  if (currentUser?.role === "admin" && selectedClaims.size > 0) {
+    bulkActionBar.style.display = "flex";
+    if (selectedCount) selectedCount.textContent = selectedClaims.size;
+  } else {
+    bulkActionBar.style.display = "none";
+  }
+}
+
+window.clearSelection = function() {
+  selectedClaims.clear();
+  
+  // Uncheck all checkboxes
+  document.querySelectorAll(".claim-checkbox").forEach(cb => {
+    cb.checked = false;
+  });
+  
+  // Remove selected class from all rows
+  document.querySelectorAll("tr.selected").forEach(row => {
+    row.classList.remove("selected");
+  });
+  
+  updateBulkActionBar();
+  updateSelectAllCheckbox();
+};
+
+// ==================== BULK ASSIGN FUNCTIONS ====================
+window.openBulkAssignModal = function() {
+  if (selectedClaims.size === 0) {
+    showToast("Please select at least one claim", "error");
+    return;
+  }
+  
+  document.getElementById("bulkAssignCount").textContent = selectedClaims.size;
+  document.getElementById("bulkAssignAgentSelect").value = "";
+  document.getElementById("bulkAssignModal").style.display = "flex";
+};
+
+window.closeBulkAssignModal = function() {
+  document.getElementById("bulkAssignModal").style.display = "none";
+};
+
+window.saveBulkAssignment = async function() {
+  const agentId = document.getElementById("bulkAssignAgentSelect").value;
+  
+  if (!agentId) {
+    showToast("Please select an agent", "error");
+    return;
+  }
+  
+  try {
+    // Update all selected claims
+    const promises = Array.from(selectedClaims).map(claimId => 
+      apiCall(`/api/claims/${claimId}`, 'PUT', {
+        assignedTo: agentId,
+        sharedWith: []
+      })
+    );
+    
+    await Promise.all(promises);
+    
+    closeBulkAssignModal();
+    clearSelection();
+    loadClaims();
+    showToast(`${selectedClaims.size} claims assigned to ${employeeMap[agentId]?.name || agentId}`);
+  } catch (error) {
+    showToast("Error assigning claims: " + error.message, "error");
+  }
+};
+
+// ==================== BULK DELETE FUNCTION ====================
+window.bulkDelete = async function() {
+  if (selectedClaims.size === 0) {
+    showToast("Please select at least one claim", "error");
+    return;
+  }
+  
+  const count = selectedClaims.size;
+  if (!confirm(`Are you sure you want to delete ${count} claim${count !== 1 ? 's' : ''}? This action cannot be undone.`)) {
+    return;
+  }
+  
+  try {
+    // Delete all selected claims
+    const promises = Array.from(selectedClaims).map(claimId => 
+      apiCall(`/api/claims/${claimId}`, 'DELETE')
+    );
+    
+    await Promise.all(promises);
+    
+    selectedClaims.clear();
+    loadClaims();
+    showToast(`${count} claim${count !== 1 ? 's' : ''} deleted successfully!`);
+  } catch (error) {
+    showToast("Error deleting claims: " + error.message, "error");
   }
 };
 

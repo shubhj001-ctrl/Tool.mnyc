@@ -1619,3 +1619,113 @@ tbody tr:last-child td {
   background: var(--primary);
   color: white;
 }
+/* ==================== BULK ACTION BAR ==================== */
+.bulk-action-bar {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border-radius: var(--radius);
+  padding: 15px 20px;
+  margin: 0 20px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bulk-select-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  font-weight: 500;
+}
+
+.bulk-select-info input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: white;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.bulk-actions .btn {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: #78350f;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+  color: white;
+}
+
+/* Checkbox column in table */
+.checkbox-col {
+  width: 40px;
+  text-align: center;
+}
+
+.checkbox-col input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.claim-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+/* Selected row highlight */
+tr.selected {
+  background: rgba(37, 99, 235, 0.1) !important;
+}
+
+tr.selected:hover {
+  background: rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Bulk assign modal */
+.bulk-assign-info {
+  display: flex;
+  justify-content: center;
+  padding: 15px 0;
+}
+
+.bulk-count-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bulk-count-badge i {
+  font-size: 1.2rem;
+}

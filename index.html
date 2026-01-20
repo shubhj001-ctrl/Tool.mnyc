@@ -246,6 +246,25 @@
   </div>
 </div>
 
+<!-- Bulk Action Bar (Admin Only) -->
+<div class="bulk-action-bar" id="bulkActionBar" style="display: none;">
+  <div class="bulk-select-info">
+    <input type="checkbox" id="selectAllClaims" onchange="toggleSelectAll()" />
+    <span id="selectedCount">0</span> claims selected
+  </div>
+  <div class="bulk-actions">
+    <button class="btn btn-warning" onclick="openBulkAssignModal()">
+      <i class="fas fa-user-plus"></i> Assign Selected
+    </button>
+    <button class="btn btn-danger" onclick="bulkDelete()">
+      <i class="fas fa-trash"></i> Delete Selected
+    </button>
+    <button class="btn btn-secondary" onclick="clearSelection()">
+      <i class="fas fa-times"></i> Clear Selection
+    </button>
+  </div>
+</div>
+
 <!-- Claims Table -->
 <div class="card">
   <div class="card-header">
@@ -256,6 +275,9 @@
     <table>
       <thead>
         <tr>
+          <th class="checkbox-col" id="checkboxHeader" style="display: none;">
+            <input type="checkbox" id="selectAllHeader" onchange="toggleSelectAll()" title="Select All" />
+          </th>
           <th>Claim #</th>
           <th>Patient</th>
           <th>Balance</th>
@@ -546,6 +568,44 @@
       </button>
       <button class="btn btn-primary" id="detailWorkBtn" onclick="workFromDetail()">
         <i class="fas fa-edit"></i> Work on Claim
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Assign Modal -->
+<div class="modal-backdrop" id="bulkAssignModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-users-cog"></i> Bulk Assign Claims</h3>
+      <button class="btn-close" onclick="closeBulkAssignModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="bulk-assign-info">
+      <div class="bulk-count-badge">
+        <i class="fas fa-file-invoice"></i>
+        <span id="bulkAssignCount">0</span> claims selected
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label><i class="fas fa-user-tie"></i> Assign All To</label>
+      <select id="bulkAssignAgentSelect">
+        <option value="">-- Select Agent --</option>
+        <option value="EMP001">Shubham (EMP001)</option>
+        <option value="EMP002">Ravi (EMP002)</option>
+        <option value="EMP003">Chirag (EMP003)</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeBulkAssignModal()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="btn btn-primary" onclick="saveBulkAssignment()">
+        <i class="fas fa-check"></i> Assign All
       </button>
     </div>
   </div>
