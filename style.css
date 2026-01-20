@@ -671,6 +671,76 @@ tr.claim-paid td {
   background: #d97706;
 }
 
+.btn-icon-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.btn-icon-secondary:hover {
+  background: #475569;
+}
+
+/* ==================== ACTION DROPDOWN ==================== */
+.action-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.action-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  min-width: 140px;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.action-dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(5px);
+}
+
+.action-dropdown-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 15px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.action-dropdown-menu button:hover {
+  background: var(--bg);
+}
+
+.action-dropdown-menu button.danger {
+  color: var(--danger);
+}
+
+.action-dropdown-menu button.danger:hover {
+  background: #fee2e2;
+}
+
+.action-dropdown-menu button i {
+  width: 16px;
+  text-align: center;
+}
+
 /* ==================== STATS DASHBOARD ==================== */
 .stats-container {
   max-width: 1400px;

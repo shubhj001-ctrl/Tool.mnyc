@@ -565,17 +565,29 @@ function render() {
               <i class="fas fa-edit"></i>
             </button>
           ` : ''}
-          ${!isPaid && (isOwnClaim || currentUser.role === "admin") ? `
-            <button class="btn-icon btn-icon-share" onclick="openShareModal('${claimId}')" title="Share claim">
-              <i class="fas fa-share-alt"></i>
-            </button>
-          ` : ''}
           ${currentUser.role === "admin" ? `
             <button class="btn-icon btn-icon-warning" onclick="openAssignModal('${claimId}')" title="Assign claim">
               <i class="fas fa-user-plus"></i>
             </button>
-            <button class="btn-icon btn-icon-danger" onclick="deleteClaim('${claimId}')" title="Delete claim">
-              <i class="fas fa-trash"></i>
+            <div class="action-dropdown">
+              <button class="btn-icon btn-icon-secondary" onclick="toggleActionDropdown('${claimId}')" title="More actions">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <div class="action-dropdown-menu" id="dropdown-${claimId}">
+                ${!isPaid ? `
+                  <button onclick="openShareModal('${claimId}'); closeAllDropdowns();">
+                    <i class="fas fa-share-alt"></i> Share
+                  </button>
+                ` : ''}
+                <button onclick="deleteClaim('${claimId}'); closeAllDropdowns();" class="danger">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          ` : ''}
+          ${!isPaid && isOwnClaim && currentUser.role === "agent" ? `
+            <button class="btn-icon btn-icon-share" onclick="openShareModal('${claimId}')" title="Share claim">
+              <i class="fas fa-share-alt"></i>
             </button>
           ` : ''}
         </div>
@@ -892,6 +904,27 @@ window.saveAssignment = async function() {
     showToast(error.message, "error");
   }
 };
+
+// ==================== ACTION DROPDOWN FUNCTIONS ====================
+window.toggleActionDropdown = function(claimId) {
+  closeAllDropdowns();
+  const dropdown = document.getElementById(`dropdown-${claimId}`);
+  if (dropdown) {
+    dropdown.classList.toggle('show');
+  }
+};
+
+window.closeAllDropdowns = function() {
+  const dropdowns = document.querySelectorAll('.action-dropdown-menu');
+  dropdowns.forEach(d => d.classList.remove('show'));
+};
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.action-dropdown')) {
+    closeAllDropdowns();
+  }
+});
 
 // ==================== SHARE FUNCTIONS ====================
 window.openShareModal = function(claimId) {
