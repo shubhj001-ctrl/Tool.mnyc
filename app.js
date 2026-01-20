@@ -116,12 +116,19 @@ function updateEmployeeMap() {
 }
 
 // ==================== AUTHENTICATION ====================
-async function handleLogin(event) {
+window.handleLogin = async function(event) {
   event.preventDefault();
+  
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
-  const loginBtn = event.target.querySelector('button[type="submit"]');
+  const loginBtn = document.querySelector('#loginScreen button[type="submit"]');
+  
+  if (!loginId || !password) {
+    loginError.style.display = "flex";
+    document.getElementById("loginErrorText").textContent = "Please enter both ID and password";
+    return;
+  }
   
   // Show loading state
   const originalBtnText = loginBtn.innerHTML;
@@ -154,13 +161,13 @@ async function handleLogin(event) {
     loginError.style.display = "none";
     showApp();
   } catch (error) {
+    console.error('Login error:', error);
     loginError.style.display = "flex";
     document.getElementById("loginErrorText").textContent = error.message || "Invalid Employee ID or Password";
-  } finally {
     loginBtn.innerHTML = originalBtnText;
     loginBtn.disabled = false;
   }
-}
+};
 
 // Admin login functions
 window.showAdminLogin = function() {
@@ -178,10 +185,17 @@ window.closeAdminLogin = function() {
 
 window.handleAdminLogin = async function(event) {
   event.preventDefault();
+  
   const loginId = document.getElementById("adminLoginId").value.toLowerCase().trim();
   const password = document.getElementById("adminLoginPassword").value;
   const loginError = document.getElementById("adminLoginError");
-  const loginBtn = event.target.querySelector('button[type="submit"]');
+  const loginBtn = document.querySelector('#adminLoginModal button[type="submit"]');
+  
+  if (!loginId || !password) {
+    loginError.style.display = "flex";
+    document.getElementById("adminLoginErrorText").textContent = "Please enter both username and password";
+    return;
+  }
   
   // Show loading state
   const originalBtnText = loginBtn.innerHTML;
@@ -203,13 +217,13 @@ window.handleAdminLogin = async function(event) {
     currentUser = user;
     currentUser.id = 'ADMIN001';
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
-    // Hide admin login screen and show app (don't call closeAdminLogin to avoid showing agent screen)
+    // Hide admin login screen and show app
     document.getElementById("adminLoginModal").style.display = "none";
     showApp();
   } catch (error) {
+    console.error('Admin login error:', error);
     loginError.style.display = "flex";
     document.getElementById("adminLoginErrorText").textContent = error.message || "Invalid admin credentials";
-  } finally {
     loginBtn.innerHTML = originalBtnText;
     loginBtn.disabled = false;
   }

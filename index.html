@@ -18,7 +18,7 @@
       <h1>MNYC Work Management</h1>
       <p>Daily Claim Workforce Management</p>
     </div>
-    <form class="login-form" onsubmit="handleLogin(event)">
+    <form class="login-form" id="agentLoginForm" onsubmit="return false;">
       <div class="form-group">
         <label><i class="fas fa-id-badge"></i> Employee ID</label>
         <input type="text" id="loginId" placeholder="Enter your Employee ID" required />
@@ -31,7 +31,7 @@
         <i class="fas fa-exclamation-circle"></i>
         <span id="loginErrorText">Invalid credentials</span>
       </div>
-      <button type="submit" class="btn btn-primary btn-full">
+      <button type="button" class="btn btn-primary btn-full" onclick="handleLogin(event)">
         <i class="fas fa-sign-in-alt"></i> Login as Agent
       </button>
     </form>
@@ -52,7 +52,7 @@
       <h1>Admin Portal</h1>
       <p>MNYC Work Management - Administrator Access</p>
     </div>
-    <form class="login-form" onsubmit="handleAdminLogin(event)">
+    <form class="login-form" id="adminLoginForm" onsubmit="return false;">
       <div class="form-group">
         <label><i class="fas fa-user"></i> Admin Username</label>
         <input type="text" id="adminLoginId" placeholder="Enter admin username" required />
@@ -65,7 +65,7 @@
         <i class="fas fa-exclamation-circle"></i>
         <span id="adminLoginErrorText">Invalid credentials</span>
       </div>
-      <button type="submit" class="btn btn-primary btn-full">
+      <button type="button" class="btn btn-primary btn-full" onclick="handleAdminLogin(event)">
         <i class="fas fa-sign-in-alt"></i> Login as Admin
       </button>
     </form>
