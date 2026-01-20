@@ -1696,6 +1696,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Check for existing session on page load
   checkSession();
   
+  // Hide loading screen after initialization
+  setTimeout(() => {
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+      loadingScreen.classList.add('fade-out');
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }
+  }, 800); // Small delay to ensure smooth transition
+  
   // Auto-refresh every 30 seconds when app is visible
   setInterval(() => {
     if (currentUser && document.visibilityState === 'visible') {
