@@ -116,17 +116,15 @@ function updateEmployeeMap() {
 }
 
 // ==================== AUTHENTICATION ====================
-window.handleLogin = async function(event) {
-  if (event) event.preventDefault();
-  
+window.handleLogin = async function() {
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
-  const loginBtn = document.querySelector('#loginScreen .btn-primary');
+  const loginBtn = document.getElementById("loginBtn");
   
   if (!loginId || !password) {
     loginError.style.display = "flex";
-    document.getElementById("loginErrorText").textContent = "Please enter both ID and password";
+    document.getElementById("loginErrorText").textContent = "Please enter both username and password";
     return;
   }
   
@@ -154,6 +152,8 @@ window.handleLogin = async function(event) {
     
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
     loginError.style.display = "none";
+    loginBtn.innerHTML = originalBtnText;
+    loginBtn.disabled = false;
     showApp();
   } catch (error) {
     console.error('Login error:', error);

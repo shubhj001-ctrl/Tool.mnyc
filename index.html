@@ -18,23 +18,23 @@
       <h1>MNYC Work Management</h1>
       <p>Daily Claim Workforce Management</p>
     </div>
-    <form class="login-form" id="loginForm" onsubmit="handleLogin(event); return false;">
+    <div class="login-form">
       <div class="form-group">
         <label><i class="fas fa-id-badge"></i> Username</label>
-        <input type="text" id="loginId" placeholder="Enter your username" required />
+        <input type="text" id="loginId" placeholder="Enter your username" />
       </div>
       <div class="form-group">
         <label><i class="fas fa-lock"></i> Password</label>
-        <input type="password" id="loginPassword" placeholder="Enter your password" required />
+        <input type="password" id="loginPassword" placeholder="Enter your password" onkeypress="if(event.key==='Enter')handleLogin()" />
       </div>
       <div class="login-error" id="loginError" style="display: none;">
         <i class="fas fa-exclamation-circle"></i>
         <span id="loginErrorText">Invalid credentials</span>
       </div>
-      <button type="submit" class="btn btn-primary btn-full">
+      <button type="button" class="btn btn-primary btn-full" id="loginBtn" onclick="handleLogin()">
         <i class="fas fa-sign-in-alt"></i> Login
       </button>
-    </form>
+    </div>
   </div>
 </div>
 
