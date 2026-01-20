@@ -36,6 +36,13 @@ const claimSchema = new mongoose.Schema({
   claimNo: { type: String, required: true, unique: true },
   patient: { type: String, required: true },
   balance: { type: Number, default: 0 },
+  // New fields
+  dos: { type: Date, default: null }, // Date of Service
+  visitType: { type: String, default: null },
+  acctNo: { type: String, default: null }, // Account Number
+  primaryPayer: { type: String, default: null },
+  billedCharges: { type: Number, default: 0 },
+  // Assignment fields
   assignedTo: { type: String, default: null },
   sharedWith: [String],
   status: { type: String, default: null },
@@ -206,6 +213,11 @@ async function seedDatabase() {
           claimNo: 'CLM001', 
           patient: 'John Doe', 
           balance: 750,
+          dos: new Date('2025-12-15'),
+          visitType: 'Office Visit',
+          acctNo: 'ACC001',
+          primaryPayer: 'Blue Cross',
+          billedCharges: 1200,
           assignedTo: 'EMP001',
           sharedWith: ['EMP002'],
           status: 'waiting',

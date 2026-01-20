@@ -526,6 +526,31 @@
   </div>
 </div>
 
+<!-- Claim Detail Modal -->
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3><i class="fas fa-file-medical"></i> Claim Details</h3>
+      <button class="btn-close" onclick="closeDetailModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="detail-content" id="detailContent">
+      <!-- Will be populated dynamically -->
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeDetailModal()">
+        <i class="fas fa-times"></i> Close
+      </button>
+      <button class="btn btn-primary" id="detailWorkBtn" onclick="workFromDetail()">
+        <i class="fas fa-edit"></i> Work on Claim
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Notification -->
 <div class="toast" id="toast">
   <i class="fas fa-check-circle"></i>

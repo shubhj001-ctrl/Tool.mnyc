@@ -20,6 +20,7 @@ const addClaimModal = document.getElementById("addClaimModal");
 const importModal = document.getElementById("importModal");
 const assignModal = document.getElementById("assignModal");
 const shareModal = document.getElementById("shareModal");
+const detailModal = document.getElementById("detailModal");
 const remarksInput = document.getElementById("remarksInput");
 const statusInput = document.getElementById("statusInput");
 const followUpDaysInput = document.getElementById("followUpDays");
@@ -35,6 +36,7 @@ const appContainer = document.getElementById("appContainer");
 let activeClaimId = null;
 let assignClaimId = null;
 let shareClaimId = null;
+let detailClaimId = null;
 let currentFilter = "all";
 let agentQueue = "my"; // 'my', 'shared', 'all'
 
@@ -390,8 +392,8 @@ function render() {
     }
     
     tr.innerHTML = `
-      <td><strong>${c.claimNo}</strong></td>
-      <td>${c.patient}</td>
+      <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;"><strong>${c.claimNo}</strong></a></td>
+      <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;">${c.patient}</a></td>
       <td><span class="balance-amount ${c.balance > 500 ? 'balance-high' : ''}">${formatCurrency(c.balance)}</span></td>
       <td>${getAssignedBadge(c.assignedTo)}${sharedIndicator}</td>
       <td>${getStatusBadge(c.status)}</td>
@@ -426,6 +428,7 @@ function render() {
       </td>
     `;
     tbody.appendChild(tr);
+  });
   });
   
   document.getElementById("claimCount").textContent = `${filteredClaims.length} claim${filteredClaims.length !== 1 ? 's' : ''}`;
@@ -528,6 +531,116 @@ window.openHistoryModal = function(claimId) {
 
 window.closeHistoryModal = function() {
   historyModal.style.display = "none";
+};
+
+// ==================== DETAIL MODAL FUNCTIONS ====================
+function formatDate(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+}
+
+window.openDetailModal = function(claimId) {
+  detailClaimId = claimId;
+  const claim = findClaimById(claimId);
+  if (!claim) return;
+  
+  const isOwnClaim = claim.assignedTo === currentUser.id;
+  const isSharedWithMe = claim.sharedWith && claim.sharedWith.includes(currentUser.id);
+  const canWork = currentUser.role === "admin" || isOwnClaim || isSharedWithMe;
+  const isPaid = claim.status === "paid";
+  
+  document.getElementById("detailContent").innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item">
+        <label>Claim #</label>
+        <div class="value">${claim.claimNo}</div>
+      </div>
+      <div class="detail-item">
+        <label>Account #</label>
+        <div class="value">${claim.acctNo || '-'}</div>
+      </div>
+      <div class="detail-item full-width">
+        <label>Patient Name</label>
+        <div class="value">${claim.patient}</div>
+      </div>
+      <div class="detail-item">
+        <label>Date of Service (D.O.S)</label>
+        <div class="value">${formatDate(claim.dos)}</div>
+      </div>
+      <div class="detail-item">
+        <label>Visit Type</label>
+        <div class="value">${claim.visitType || '-'}</div>
+      </div>
+      <div class="detail-item">
+        <label>Primary Payer</label>
+        <div class="value">${claim.primaryPayer || '-'}</div>
+      </div>
+      <div class="detail-item">
+        <label>Billed Charges</label>
+        <div class="value billed">${formatCurrency(claim.billedCharges || 0)}</div>
+      </div>
+      <div class="detail-item">
+        <label>Balance</label>
+        <div class="value balance">${formatCurrency(claim.balance)}</div>
+      </div>
+      <div class="detail-item">
+        <label>Status</label>
+        <div class="value">${getStatusBadge(claim.status)}</div>
+      </div>
+    </div>
+    
+    <div class="detail-section">
+      <h4><i class="fas fa-user-tie"></i> Assignment</h4>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Assigned To</label>
+          <div class="value">${employeeMap[claim.assignedTo]?.name || 'Unassigned'}</div>
+        </div>
+        <div class="detail-item">
+          <label>Shared With</label>
+          <div class="value">${claim.sharedWith?.length ? claim.sharedWith.map(id => employeeMap[id]?.name).join(', ') : 'None'}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="detail-section">
+      <h4><i class="fas fa-clock"></i> Work Status</h4>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Last Worked</label>
+          <div class="value">${claim.dateWorked ? new Date(claim.dateWorked).toLocaleString() : '-'}</div>
+        </div>
+        <div class="detail-item">
+          <label>Next Follow-up</label>
+          <div class="value">${claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-'}</div>
+        </div>
+        <div class="detail-item full-width">
+          <label>Work History</label>
+          <div class="value">${claim.history?.length || 0} entries</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Show/hide work button
+  const workBtn = document.getElementById("detailWorkBtn");
+  if (canWork && !isPaid) {
+    workBtn.style.display = "inline-flex";
+  } else {
+    workBtn.style.display = "none";
+  }
+  
+  detailModal.style.display = "flex";
+};
+
+window.closeDetailModal = function() {
+  detailModal.style.display = "none";
+};
+
+window.workFromDetail = function() {
+  closeDetailModal();
+  openModal(detailClaimId);
 };
 
 // ==================== ADD CLAIM FUNCTIONS ====================
@@ -800,13 +913,42 @@ function processExcelFile(file) {
         return;
       }
       
-      // Process and validate data
-      importedData = jsonData.map(row => ({
-        claimNo: row.ClaimNo || row.claimNo || row["Claim No"] || row["Claim #"] || "",
-        patient: row.Patient || row.patient || row.PatientName || row["Patient Name"] || "",
-        balance: parseFloat(row.Balance || row.balance || 0),
-        assignedTo: row.AssignTo || row.assignTo || row.AssignedTo || row["Assign To"] || null
-      })).filter(row => row.claimNo && row.patient);
+      // Process and validate data - map all fields from Excel
+      importedData = jsonData.map(row => {
+        // Parse DOS (Date of Service) - handles various formats
+        let dos = null;
+        const dosValue = row.DOS || row["D.O.S"] || row.dos || row["Date of Service"] || row.DateOfService;
+        if (dosValue) {
+          // Handle Excel serial date numbers
+          if (typeof dosValue === 'number') {
+            dos = new Date((dosValue - 25569) * 86400 * 1000);
+          } else {
+            // Try parsing as string (DD/MM/YY or other formats)
+            const parts = String(dosValue).split(/[\/\-]/);
+            if (parts.length === 3) {
+              let day = parseInt(parts[0]);
+              let month = parseInt(parts[1]) - 1;
+              let year = parseInt(parts[2]);
+              if (year < 100) year += 2000;
+              dos = new Date(year, month, day);
+            } else {
+              dos = new Date(dosValue);
+            }
+          }
+        }
+        
+        return {
+          claimNo: row.ClaimNo || row.claimNo || row["Claim No"] || row["Claim #"] || row["Claim#"] || "",
+          patient: row.Patient || row.patient || row.PatientName || row["Patient Name"] || "",
+          balance: parseFloat(row.Balance || row.balance || 0) || 0,
+          dos: dos,
+          visitType: row.VisitType || row["Visit Type"] || row.visitType || null,
+          acctNo: row.AcctNo || row["Acct #"] || row["Acct#"] || row.AccountNo || row["Account #"] || row.acctNo || null,
+          primaryPayer: row.PrimaryPayer || row["Primary Payer"] || row.Payer || row.primaryPayer || null,
+          billedCharges: parseFloat(row.BilledCharges || row["Billed Charges"] || row.billedCharges || 0) || 0,
+          assignedTo: row.AssignTo || row.assignTo || row.AssignedTo || row["Assign To"] || null
+        };
+      }).filter(row => row.claimNo && row.patient);
       
       // Show preview
       showImportPreview();
@@ -830,7 +972,7 @@ function showImportPreview() {
       <td>${row.claimNo}</td>
       <td>${row.patient}</td>
       <td>${formatCurrency(row.balance)}</td>
-      <td>${employeeMap[row.assignedTo]?.name || row.assignedTo || 'Unassigned'}</td>
+      <td>${row.primaryPayer || '-'}</td>
     </tr>
   `).join('');
   
@@ -847,6 +989,11 @@ window.importClaims = async function() {
     claimNo: row.claimNo,
     patient: row.patient,
     balance: row.balance,
+    dos: row.dos,
+    visitType: row.visitType,
+    acctNo: row.acctNo,
+    primaryPayer: row.primaryPayer,
+    billedCharges: row.billedCharges,
     assignedTo: row.assignedTo || null,
     sharedWith: [],
     status: null,
