@@ -24,6 +24,8 @@ let detailClaimId = null;
 let currentFilter = "all";
 let agentQueue = "my"; // 'my', 'shared', 'all'
 let selectedClaims = new Set(); // Track selected claim IDs for bulk actions
+let currentPage = 1;
+const claimsPerPage = 10;
 
 // Initialize DOM elements after page loads
 function initDOMElements() {
@@ -409,11 +411,13 @@ function updateEmployeeStats() {
 
 // ==================== FILTER FUNCTIONS ====================
 function filterClaims() {
+  currentPage = 1; // Reset to first page when searching
   render();
 }
 
 window.setFilter = function(filter) {
   currentFilter = filter;
+  currentPage = 1; // Reset to first page
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.filter === filter);
   });
@@ -423,6 +427,7 @@ window.setFilter = function(filter) {
 // Agent queue filter
 window.setAgentQueue = function(queue) {
   agentQueue = queue;
+  currentPage = 1; // Reset to first page
   document.querySelectorAll(".queue-tab").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.queue === queue);
   });
@@ -491,12 +496,21 @@ function render() {
   if (filteredClaims.length === 0) {
     document.getElementById("emptyState").style.display = "block";
     document.querySelector(".table-wrapper").style.display = "none";
+    document.getElementById("paginationContainer").style.display = "none";
   } else {
     document.getElementById("emptyState").style.display = "none";
     document.querySelector(".table-wrapper").style.display = "block";
+    document.getElementById("paginationContainer").style.display = "flex";
   }
   
-  filteredClaims.forEach((c) => {
+  // Pagination logic
+  const totalPages = Math.ceil(filteredClaims.length / claimsPerPage);
+  if (currentPage > totalPages) currentPage = totalPages || 1;
+  const startIndex = (currentPage - 1) * claimsPerPage;
+  const endIndex = startIndex + claimsPerPage;
+  const paginatedClaims = filteredClaims.slice(startIndex, endIndex);
+  
+  paginatedClaims.forEach((c) => {
     const claimId = c._id;
     const historyCount = c.history ? c.history.length : 0;
     const isOwnClaim = c.assignedTo === currentUser.id;
@@ -601,7 +615,75 @@ function render() {
   updateEmployeeStats();
   updateBulkActionBar();
   updateSelectAllCheckbox();
+  renderPagination(filteredClaims.length, totalPages);
 }
+
+// ==================== PAGINATION ====================
+function renderPagination(totalClaims, totalPages) {
+  const paginationContainer = document.getElementById("paginationContainer");
+  if (!paginationContainer || totalPages <= 1) {
+    if (paginationContainer) paginationContainer.style.display = "none";
+    return;
+  }
+  
+  const startItem = (currentPage - 1) * claimsPerPage + 1;
+  const endItem = Math.min(currentPage * claimsPerPage, totalClaims);
+  
+  let paginationHTML = `
+    <div class="pagination-info">
+      Showing ${startItem}-${endItem} of ${totalClaims} claims
+    </div>
+    <div class="pagination-controls">
+      <button class="pagination-btn" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''} title="First page">
+        <i class="fas fa-angle-double-left"></i>
+      </button>
+      <button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} title="Previous page">
+        <i class="fas fa-angle-left"></i>
+      </button>
+      <span class="pagination-pages">`;
+  
+  // Show page numbers
+  const maxVisiblePages = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+  
+  if (startPage > 1) {
+    paginationHTML += `<button class="pagination-page" onclick="goToPage(1)">1</button>`;
+    if (startPage > 2) paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    paginationHTML += `<button class="pagination-page ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+  }
+  
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+    paginationHTML += `<button class="pagination-page" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+  }
+  
+  paginationHTML += `</span>
+      <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} title="Next page">
+        <i class="fas fa-angle-right"></i>
+      </button>
+      <button class="pagination-btn" onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''} title="Last page">
+        <i class="fas fa-angle-double-right"></i>
+      </button>
+    </div>
+  `;
+  
+  paginationContainer.innerHTML = paginationHTML;
+}
+
+window.goToPage = function(page) {
+  currentPage = page;
+  render();
+  // Scroll to top of table
+  document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 // Helper function to find claim by ID
 function findClaimById(id) {
