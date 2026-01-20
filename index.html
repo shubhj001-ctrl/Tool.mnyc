@@ -44,16 +44,15 @@
   </div>
 </div>
 
-<!-- Admin Login Modal -->
-<div class="modal-backdrop" id="adminLoginModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3><i class="fas fa-user-shield"></i> Admin Login</h3>
-      <button class="btn-close" onclick="closeAdminLogin()">
-        <i class="fas fa-times"></i>
-      </button>
+<!-- Admin Login Screen (Separate full-screen login) -->
+<div class="login-screen admin-login-screen" id="adminLoginModal" style="display: none;">
+  <div class="login-container admin-login-container">
+    <div class="login-header admin-login-header">
+      <i class="fas fa-user-shield"></i>
+      <h1>Admin Portal</h1>
+      <p>MNYC Work Management - Administrator Access</p>
     </div>
-    <form onsubmit="handleAdminLogin(event)">
+    <form class="login-form" onsubmit="handleAdminLogin(event)">
       <div class="form-group">
         <label><i class="fas fa-user"></i> Admin Username</label>
         <input type="text" id="adminLoginId" placeholder="Enter admin username" required />
@@ -66,15 +65,16 @@
         <i class="fas fa-exclamation-circle"></i>
         <span id="adminLoginErrorText">Invalid credentials</span>
       </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="closeAdminLogin()">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-sign-in-alt"></i> Login
-        </button>
-      </div>
+      <button type="submit" class="btn btn-primary btn-full">
+        <i class="fas fa-sign-in-alt"></i> Login as Admin
+      </button>
     </form>
+    <div class="login-divider">
+      <span>or</span>
+    </div>
+    <button class="btn btn-outline btn-full" onclick="closeAdminLogin()">
+      <i class="fas fa-arrow-left"></i> Back to Agent Login
+    </button>
   </div>
 </div>
 

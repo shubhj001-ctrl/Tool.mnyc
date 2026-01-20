@@ -128,11 +128,15 @@ async function handleLogin(event) {
     // Check if trying to login as admin from agent login
     if (user.role === 'admin') {
       loginError.style.display = "flex";
-      document.getElementById("loginErrorText").textContent = "Please use 'Login as Admin' for admin access";
+      document.getElementById("loginErrorText").textContent = "No user found";
       return;
     }
     
     currentUser = user;
+    
+    // Load users first to get proper mapping
+    await loadUsers();
+    
     // Map user id dynamically
     const userIndex = allUsers.findIndex(u => u.odoo_id === currentUser.odoo_id);
     currentUser.id = userIndex >= 0 ? `EMP00${userIndex + 1}` : `EMP001`;
@@ -148,6 +152,7 @@ async function handleLogin(event) {
 
 // Admin login functions
 window.showAdminLogin = function() {
+  document.getElementById("loginScreen").style.display = "none";
   document.getElementById("adminLoginModal").style.display = "flex";
   document.getElementById("adminLoginId").value = "";
   document.getElementById("adminLoginPassword").value = "";
@@ -156,6 +161,7 @@ window.showAdminLogin = function() {
 
 window.closeAdminLogin = function() {
   document.getElementById("adminLoginModal").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
 };
 
 window.handleAdminLogin = async function(event) {
@@ -176,7 +182,8 @@ window.handleAdminLogin = async function(event) {
     currentUser = user;
     currentUser.id = 'ADMIN001';
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
-    closeAdminLogin();
+    // Hide admin login screen and show app (don't call closeAdminLogin to avoid showing agent screen)
+    document.getElementById("adminLoginModal").style.display = "none";
     showApp();
   } catch (error) {
     loginError.style.display = "flex";
@@ -188,6 +195,7 @@ function logout() {
   currentUser = null;
   localStorage.removeItem("mnyc_currentUser");
   appContainer.style.display = "none";
+  document.getElementById("adminLoginModal").style.display = "none";
   loginScreen.style.display = "flex";
   document.getElementById("loginId").value = "";
   document.getElementById("loginPassword").value = "";
@@ -233,8 +241,12 @@ function showApp() {
   selectedClaims.clear();
   updateBulkActionBar();
   
-  // Load users first (for dynamic employee mapping), then load claims
-  loadUsers().then(() => loadClaims());
+  // Load users if not already loaded (for dynamic employee mapping), then load claims
+  if (allUsers.length === 0) {
+    loadUsers().then(() => loadClaims());
+  } else {
+    loadClaims();
+  }
 }
 
 // Check for existing session

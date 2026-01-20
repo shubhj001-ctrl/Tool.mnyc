@@ -1755,6 +1755,70 @@ tr.selected:hover {
   font-size: 0.85rem;
 }
 
+/* ==================== ADMIN LOGIN SCREEN ==================== */
+.admin-login-screen {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.admin-login-container {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-login-header {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+}
+
+.admin-login-header h1 {
+  color: white;
+}
+
+.admin-login-header p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-login-screen .login-form {
+  background: transparent;
+}
+
+.admin-login-screen .form-group label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.admin-login-screen .form-group input {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.admin-login-screen .form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.admin-login-screen .form-group input:focus {
+  border-color: #7c3aed;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.admin-login-screen .login-divider::before {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-login-screen .login-divider span {
+  background: rgba(30, 41, 59, 0.95);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.admin-login-screen .btn-outline {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.admin-login-screen .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 /* ==================== USER MANAGEMENT MODAL ==================== */
 .user-management-content {
   padding: 10px 0;
