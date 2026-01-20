@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MNYC Work Management Tool</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-container">
+    <div class="login-header">
+      <i class="fas fa-briefcase"></i>
+      <h1>MNYC Work Management</h1>
+      <p>Daily Claim Workforce Management</p>
+    </div>
+    <form class="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label><i class="fas fa-id-badge"></i> Employee ID</label>
+        <input type="text" id="loginId" placeholder="Enter your Employee ID" required />
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-lock"></i> Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter your password" required />
+      </div>
+      <div class="login-error" id="loginError" style="display: none;">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="loginErrorText">Invalid credentials</span>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
+    </form>
+    <div class="login-footer">
+      <p>Demo Credentials:</p>
+      <small>Admin: yashpal / admin123</small><br>
+      <small>Agents: shubham, ravi, chirag / pass123</small>
+      <div class="login-note">
+        <i class="fas fa-info-circle"></i>
+        <small>For multi-user testing, use different browser tabs (not incognito). Click "Refresh" to sync data.</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main App (Hidden until login) -->
+<div class="app-container" id="appContainer" style="display: none;">
+
+<!-- Header -->
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      <i class="fas fa-briefcase"></i>
+      <div>
+        <h1>MNYC Work Management</h1>
+        <p>Daily Claim Workforce Management</p>
+      </div>
+    </div>
+    <div class="user-info">
+      <div class="user-details">
+        <span class="user-name" id="userName"></span>
+        <span class="user-role" id="userRole"></span>
+      </div>
+      <div class="user-avatar" id="userAvatar"></div>
+      <button class="btn btn-secondary" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Admin Controls (Only visible to admin) -->
+<div class="admin-controls" id="adminControls" style="display: none;">
+  <div class="admin-header">
+    <h2><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
+    <div class="admin-actions">
+      <button class="btn btn-outline" onclick="refreshData()">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+      <button class="btn btn-outline" onclick="openImportModal()">
+        <i class="fas fa-file-excel"></i> Import Excel
+      </button>
+      <button class="btn btn-outline" onclick="exportData()">
+        <i class="fas fa-download"></i> Export Data
+      </button>
+      <button class="btn btn-outline" onclick="addNewClaim()">
+        <i class="fas fa-plus"></i> Add Claim
+      </button>
+    </div>
+  </div>
+  
+  <!-- Employee Overview Cards -->
+  <div class="employee-overview">
+    <div class="employee-card" id="empCard_EMP001">
+      <div class="employee-avatar" style="background: #3b82f6;">S</div>
+      <div class="employee-info">
+        <h4>Shubham</h4>
+        <span class="employee-id">EMP001</span>
+      </div>
+      <div class="employee-stats">
+        <div class="emp-stat">
+          <span class="emp-stat-value" id="empTotal_EMP001">0</span>
+          <span class="emp-stat-label">Total</span>
+        </div>
+        <div class="emp-stat">
+          <span class="emp-stat-value emp-stat-danger" id="empOverdue_EMP001">0</span>
+          <span class="emp-stat-label">Overdue</span>
+        </div>
+      </div>
+      <span class="online-status" id="status_EMP001"></span>
+    </div>
+    
+    <div class="employee-card" id="empCard_EMP002">
+      <div class="employee-avatar" style="background: #10b981;">R</div>
+      <div class="employee-info">
+        <h4>Ravi</h4>
+        <span class="employee-id">EMP002</span>
+      </div>
+      <div class="employee-stats">
+        <div class="emp-stat">
+          <span class="emp-stat-value" id="empTotal_EMP002">0</span>
+          <span class="emp-stat-label">Total</span>
+        </div>
+        <div class="emp-stat">
+          <span class="emp-stat-value emp-stat-danger" id="empOverdue_EMP002">0</span>
+          <span class="emp-stat-label">Overdue</span>
+        </div>
+      </div>
+      <span class="online-status" id="status_EMP002"></span>
+    </div>
+    
+    <div class="employee-card" id="empCard_EMP003">
+      <div class="employee-avatar" style="background: #f59e0b;">C</div>
+      <div class="employee-info">
+        <h4>Chirag</h4>
+        <span class="employee-id">EMP003</span>
+      </div>
+      <div class="employee-stats">
+        <div class="emp-stat">
+          <span class="emp-stat-value" id="empTotal_EMP003">0</span>
+          <span class="emp-stat-label">Total</span>
+        </div>
+        <div class="emp-stat">
+          <span class="emp-stat-value emp-stat-danger" id="empOverdue_EMP003">0</span>
+          <span class="emp-stat-label">Overdue</span>
+        </div>
+      </div>
+      <span class="online-status" id="status_EMP003"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Agent Header (Only visible to agents) -->
+<div class="agent-header" id="agentHeader" style="display: none;">
+  <div class="agent-queue-tabs">
+    <button class="queue-tab active" data-queue="my" onclick="setAgentQueue('my')">
+      <i class="fas fa-user"></i> My Queue
+    </button>
+    <button class="queue-tab" data-queue="shared" onclick="setAgentQueue('shared')">
+      <i class="fas fa-share-alt"></i> Shared With Me
+    </button>
+    <button class="queue-tab" data-queue="all" onclick="setAgentQueue('all')">
+      <i class="fas fa-users"></i> All Claims
+    </button>
+  </div>
+  <div class="agent-actions">
+    <select class="agent-filter" id="agentQueueFilter" onchange="filterClaims()" style="display: none;">
+      <option value="all">All Agents</option>
+      <option value="EMP001">Shubham's Queue</option>
+      <option value="EMP002">Ravi's Queue</option>
+      <option value="EMP003">Chirag's Queue</option>
+    </select>
+    <button class="btn btn-outline" onclick="refreshData()">
+      <i class="fas fa-sync-alt"></i> Refresh
+    </button>
+    <button class="btn btn-outline" onclick="exportData()">
+      <i class="fas fa-download"></i> Export
+    </button>
+  </div>
+</div>
+
+<!-- Stats Dashboard -->
+<div class="stats-container">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue">
+      <i class="fas fa-file-invoice"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value" id="totalClaims">0</span>
+      <span class="stat-label" id="totalLabel">Total Claims</span>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-yellow">
+      <i class="fas fa-clock"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value" id="pendingClaims">0</span>
+      <span class="stat-label">Pending</span>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-green">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value" id="paidClaims">0</span>
+      <span class="stat-label">Paid</span>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-red">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value" id="overdueClaims">0</span>
+      <span class="stat-label">Overdue</span>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <div class="search-box">
+    <i class="fas fa-search"></i>
+    <input type="text" id="searchInput" placeholder="Search claims..." onkeyup="filterClaims()">
+  </div>
+  <div class="filter-group">
+    <div class="filter-buttons">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" data-filter="waiting" onclick="setFilter('waiting')">Waiting</button>
+      <button class="filter-btn" data-filter="unpaid" onclick="setFilter('unpaid')">Unpaid</button>
+      <button class="filter-btn" data-filter="paid" onclick="setFilter('paid')">Paid</button>
+    </div>
+    <select class="agent-filter" id="agentFilter" onchange="filterClaims()" style="display: none;">
+      <option value="all">All Agents</option>
+      <option value="EMP001">Shubham</option>
+      <option value="EMP002">Ravi</option>
+      <option value="EMP003">Chirag</option>
+      <option value="unassigned">Unassigned</option>
+    </select>
+  </div>
+</div>
+
+<!-- Claims Table -->
+<div class="card">
+  <div class="card-header">
+    <h2><i class="fas fa-list"></i> Claims List</h2>
+    <span class="badge" id="claimCount">0 claims</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Claim #</th>
+          <th>Patient</th>
+          <th>Balance</th>
+          <th>Assigned To</th>
+          <th>Status</th>
+          <th>Date Worked</th>
+          <th>Next Follow-Up</th>
+          <th>History</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="claimsBody"></tbody>
+    </table>
+  </div>
+  <div class="empty-state" id="emptyState" style="display: none;">
+    <i class="fas fa-inbox"></i>
+    <p>No claims found</p>
+  </div>
+</div>
+
+</div><!-- End App Container -->
+
+<!-- Work Modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-edit"></i> Work Claim</h3>
+      <button class="btn-close" onclick="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="claim-summary" id="claimSummary"></div>
+
+    <div class="form-group">
+      <label><i class="fas fa-comment"></i> Remarks</label>
+      <textarea id="remarksInput" rows="3" placeholder="Enter your notes about this claim..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label><i class="fas fa-tag"></i> Status</label>
+        <select id="statusInput">
+          <option value="waiting">⏳ Waiting</option>
+          <option value="unpaid">💰 Unpaid</option>
+          <option value="paid">✅ Paid</option>
+          <option value="denied">❌ Denied</option>
+          <option value="in-review">🔍 In Review</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-calendar"></i> Follow-Up Days</label>
+        <input type="number" id="followUpDays" min="1" max="90" value="14" />
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="cancelBtn" onclick="closeModal()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="btn btn-primary" id="saveBtn">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal-backdrop" id="historyModal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3><i class="fas fa-history"></i> Follow-Up History</h3>
+      <button class="btn-close" onclick="closeHistoryModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="claim-summary" id="historyClaimSummary"></div>
+    
+    <div class="history-timeline" id="historyTimeline">
+      <!-- History entries will be populated here -->
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeHistoryModal()">
+        <i class="fas fa-times"></i> Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add New Claim Modal -->
+<div class="modal-backdrop" id="addClaimModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-plus-circle"></i> Add New Claim</h3>
+      <button class="btn-close" onclick="closeAddClaimModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label><i class="fas fa-hashtag"></i> Claim Number</label>
+      <input type="text" id="newClaimNo" placeholder="e.g., CLM003" />
+    </div>
+
+    <div class="form-group">
+      <label><i class="fas fa-user"></i> Patient Name</label>
+      <input type="text" id="newPatient" placeholder="Enter patient name" />
+    </div>
+
+    <div class="form-group">
+      <label><i class="fas fa-dollar-sign"></i> Balance</label>
+      <input type="number" id="newBalance" placeholder="Enter balance amount" min="0" step="0.01" />
+    </div>
+
+    <div class="form-group">
+      <label><i class="fas fa-user-tie"></i> Assign To</label>
+      <select id="newAssignee">
+        <option value="">-- Select Agent --</option>
+        <option value="EMP001">Shubham (EMP001)</option>
+        <option value="EMP002">Ravi (EMP002)</option>
+        <option value="EMP003">Chirag (EMP003)</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAddClaimModal()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="btn btn-primary" onclick="saveNewClaim()">
+        <i class="fas fa-plus"></i> Add Claim
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Excel Modal -->
+<div class="modal-backdrop" id="importModal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3><i class="fas fa-file-excel"></i> Import Claims from Excel</h3>
+      <button class="btn-close" onclick="closeImportModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="import-instructions">
+      <h4><i class="fas fa-info-circle"></i> File Format Instructions</h4>
+      <p>Your Excel file should have the following columns:</p>
+      <div class="column-list">
+        <span class="column-tag">ClaimNo</span>
+        <span class="column-tag">Patient</span>
+        <span class="column-tag">Balance</span>
+        <span class="column-tag">AssignTo (optional)</span>
+      </div>
+      <p><small>AssignTo values: EMP001 (Shubham), EMP002 (Ravi), EMP003 (Chirag)</small></p>
+    </div>
+
+    <div class="file-upload-area" id="fileUploadArea">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <p>Drag & drop your Excel file here</p>
+      <span>or</span>
+      <label class="btn btn-primary">
+        <i class="fas fa-folder-open"></i> Browse Files
+        <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)" hidden />
+      </label>
+    </div>
+
+    <div class="import-preview" id="importPreview" style="display: none;">
+      <h4><i class="fas fa-table"></i> Preview (<span id="previewCount">0</span> claims)</h4>
+      <div class="preview-table-wrapper">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>Claim #</th>
+              <th>Patient</th>
+              <th>Balance</th>
+              <th>Assign To</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeImportModal()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="btn btn-primary" id="importBtn" onclick="importClaims()" disabled>
+        <i class="fas fa-upload"></i> Import Claims
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal-backdrop" id="assignModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-plus"></i> Assign Claim</h3>
+      <button class="btn-close" onclick="closeAssignModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="claim-summary" id="assignClaimSummary"></div>
+
+    <div class="form-group">
+      <label><i class="fas fa-user-tie"></i> Assign To Agent</label>
+      <select id="assignAgentSelect">
+        <option value="">-- Select Agent --</option>
+        <option value="EMP001">Shubham (EMP001)</option>
+        <option value="EMP002">Ravi (EMP002)</option>
+        <option value="EMP003">Chirag (EMP003)</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAssignModal()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="btn btn-primary" onclick="saveAssignment()">
+        <i class="fas fa-check"></i> Assign
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-backdrop" id="shareModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-share-alt"></i> Share Claim</h3>
+      <button class="btn-close" onclick="closeShareModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="claim-summary" id="shareClaimSummary"></div>
+
+    <div class="share-info">
+      <i class="fas fa-info-circle"></i>
+      <p>Sharing allows other agents to work on this claim when you're unavailable. They can view all history and add their own updates.</p>
+    </div>
+
+    <div class="form-group">
+      <label><i class="fas fa-users"></i> Share With Agents</label>
+      <div class="share-checkboxes" id="shareCheckboxes">
+        <!-- Checkboxes will be populated dynamically -->
+      </div>
+    </div>
+
+    <div class="current-shares" id="currentShares" style="display: none;">
+      <label><i class="fas fa-user-friends"></i> Currently Shared With</label>
+      <div id="currentSharesList"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeShareModal()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="btn btn-primary" onclick="saveShare()">
+        <i class="fas fa-share"></i> Update Sharing
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">
+  <i class="fas fa-check-circle"></i>
+  <span id="toastMessage">Changes saved successfully!</span>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
