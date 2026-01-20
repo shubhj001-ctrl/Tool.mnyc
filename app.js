@@ -275,7 +275,7 @@ function calculateNextFollowUp(dateWorked, days) {
 }
 
 function getDueClass(nextDate, status) {
-  if (!nextDate || status === "paid") return "";
+  if (!nextDate || status === "PAID") return "";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const next = new Date(nextDate);
@@ -288,15 +288,24 @@ function getDueClass(nextDate, status) {
 }
 
 function getStatusBadge(status) {
-  const statusMap = {
-    waiting: { class: "status-waiting", icon: "⏳", label: "Waiting" },
-    unpaid: { class: "status-unpaid", icon: "💰", label: "Unpaid" },
-    paid: { class: "status-paid", icon: "✅", label: "Paid" },
-    denied: { class: "status-denied", icon: "❌", label: "Denied" },
-    "in-review": { class: "status-in-review", icon: "🔍", label: "In Review" }
-  };
-  const s = statusMap[status] || { class: "status-waiting", icon: "⏳", label: status || "-" };
-  return `<span class="status-badge ${s.class}">${s.icon} ${s.label}</span>`;
+  if (!status) return `<span class="status-badge status-pending">— Pending</span>`;
+  
+  // Color coding based on status type
+  let statusClass = "status-default";
+  if (status === "PAID" || status === "PAID_TO_OTHER_PROV") {
+    statusClass = "status-paid";
+  } else if (status === "REJECTED" || status === "INEL") {
+    statusClass = "status-denied";
+  } else if (status === "INPRCS" || status === "PENDING") {
+    statusClass = "status-in-review";
+  }
+  
+  return `<span class="status-badge ${statusClass}">${status}</span>`;
+}
+
+function getActionBadge(action) {
+  if (!action) return "";
+  return `<span class="action-badge">${action.replace(/_/g, ' ')}</span>`;
 }
 
 function getAssignedBadge(assignedTo) {
@@ -324,8 +333,8 @@ function updateStats() {
   }
   
   const total = relevantClaims.length;
-  const pending = relevantClaims.filter(c => c.status === "waiting" || c.status === "in-review" || !c.status).length;
-  const paid = relevantClaims.filter(c => c.status === "paid").length;
+  const pending = relevantClaims.filter(c => c.status === "INPRCS" || !c.status).length;
+  const paid = relevantClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -333,7 +342,7 @@ function updateStats() {
     if (!c.nextFollowUp) return false;
     const next = new Date(c.nextFollowUp);
     next.setHours(0, 0, 0, 0);
-    return next < today && c.status !== "paid";
+    return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
   }).length;
 
   document.getElementById("totalClaims").textContent = total;
@@ -352,7 +361,7 @@ function updateEmployeeStats() {
     const empClaims = claims.filter(c => c.assignedTo === empId);
     const total = empClaims.length;
     const overdue = empClaims.filter(c => {
-      if (!c.nextFollowUp || c.status === "paid") return false;
+      if (!c.nextFollowUp || c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV") return false;
       const next = new Date(c.nextFollowUp);
       next.setHours(0, 0, 0, 0);
       return next < today;
@@ -473,7 +482,7 @@ function render() {
     const isOwnClaim = c.assignedTo === currentUser.id;
     const isSharedWithMe = c.sharedWith && c.sharedWith.includes(currentUser.id);
     const canWork = currentUser.role === "admin" || isOwnClaim || isSharedWithMe;
-    const isPaid = c.status === "paid";
+    const isPaid = c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV";
     
     // Get shared indicator
     let sharedIndicator = '';
@@ -585,7 +594,8 @@ window.openModal = function(claimId) {
   `;
   
   remarksInput.value = "";
-  statusInput.value = claim.status || "waiting";
+  statusInput.value = "";  // Reset to require selection
+  document.getElementById("actionTakenInput").value = "";  // Reset action taken
   followUpDaysInput.value = claim.balance > 500 ? 14 : 21;
   modal.style.display = "flex";
 };
@@ -633,7 +643,10 @@ window.openHistoryModal = function(claimId) {
           <i class="fas fa-calendar"></i> ${new Date(h.dateWorked).toLocaleString()}
         </div>
         <div class="history-content">
-          ${getStatusBadge(h.status)}
+          <div class="history-badges">
+            ${getStatusBadge(h.status)}
+            ${h.actionTaken ? `<span class="action-badge">${h.actionTaken.replace(/_/g, ' ')}</span>` : ''}
+          </div>
           <p class="history-remarks">${h.remarks}</p>
           <div class="history-meta">
             <span><i class="fas fa-calendar-check"></i> Follow-up: ${h.nextFollowUp ? new Date(h.nextFollowUp).toLocaleDateString() : 'N/A'}</span>
@@ -666,7 +679,7 @@ window.openDetailModal = function(claimId) {
   const isOwnClaim = claim.assignedTo === currentUser.id;
   const isSharedWithMe = claim.sharedWith && claim.sharedWith.includes(currentUser.id);
   const canWork = currentUser.role === "admin" || isOwnClaim || isSharedWithMe;
-  const isPaid = claim.status === "paid";
+  const isPaid = claim.status === "PAID" || claim.status === "PAID_TO_OTHER_PROV";
   
   document.getElementById("detailContent").innerHTML = `
     <div class="detail-grid">
@@ -1289,8 +1302,21 @@ window.importClaims = async function() {
 
 // ==================== SAVE WORK ====================
 async function saveWork() {
+  const actionTaken = document.getElementById("actionTakenInput").value;
+  
+  // Validate all required fields
   if (!remarksInput.value.trim()) {
     showToast("Remarks are required", "error");
+    return;
+  }
+  
+  if (!statusInput.value) {
+    showToast("Please select a Status", "error");
+    return;
+  }
+  
+  if (!actionTaken) {
+    showToast("Please select an Action Taken", "error");
     return;
   }
   
@@ -1309,8 +1335,9 @@ async function saveWork() {
   history.push({
     remarks: remarksInput.value,
     status: statusInput.value,
+    actionTaken: actionTaken,
     dateWorked: now,
-    nextFollowUp: statusInput.value === "paid" ? null : calculateNextFollowUp(now, followUpDays),
+    nextFollowUp: statusInput.value === "PAID" ? null : calculateNextFollowUp(now, followUpDays),
     workedBy: currentUser.name
   });
   
@@ -1318,8 +1345,9 @@ async function saveWork() {
     await apiCall(`/api/claims/${activeClaimId}`, 'PUT', {
       history: history,
       status: statusInput.value,
+      actionTaken: actionTaken,
       dateWorked: now,
-      nextFollowUp: statusInput.value === "paid" ? null : calculateNextFollowUp(now, followUpDays),
+      nextFollowUp: statusInput.value === "PAID" ? null : calculateNextFollowUp(now, followUpDays),
       lastWorkedBy: currentUser.id
     });
     

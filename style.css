@@ -959,8 +959,20 @@ tbody tr:last-child td {
   gap: 6px;
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-default {
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
 .status-waiting {
@@ -984,8 +996,36 @@ tbody tr:last-child td {
 }
 
 .status-in-review {
-  background: #e0e7ff;
-  color: #3730a3;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Action Taken Badge */
+.action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #dbeafe;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+/* Required field indicator */
+.required {
+  color: var(--danger);
+  font-weight: bold;
 }
 
 /* Due Classes */
