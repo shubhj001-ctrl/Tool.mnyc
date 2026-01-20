@@ -537,7 +537,7 @@ function render() {
               <i class="fas fa-edit"></i>
             </button>
           ` : ''}
-          ${!isPaid && isOwnClaim && currentUser.role === "agent" ? `
+          ${!isPaid && (isOwnClaim || currentUser.role === "admin") ? `
             <button class="btn-icon btn-icon-share" onclick="openShareModal('${claimId}')" title="Share claim">
               <i class="fas fa-share-alt"></i>
             </button>
@@ -645,7 +645,7 @@ window.openHistoryModal = function(claimId) {
         <div class="history-content">
           <div class="history-badges">
             ${getStatusBadge(h.status)}
-            ${h.actionTaken ? `<span class="action-badge">${h.actionTaken.replace(/_/g, ' ')}</span>` : ''}
+            ${h.actionTaken ? `<span class="action-badge"><i class="fas fa-tasks"></i> ${h.actionTaken.replace(/_/g, ' ')}</span>` : ''}
           </div>
           <p class="history-remarks">${h.remarks}</p>
           <div class="history-meta">
