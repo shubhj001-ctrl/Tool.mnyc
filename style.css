@@ -910,9 +910,9 @@ tr.claim-paid td {
 
 /* ==================== CARD & TABLE ==================== */
 .card {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 30px 30px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 20px 30px;
 }
 
 .card > .card-header,
