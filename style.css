@@ -916,7 +916,8 @@ tr.claim-paid td {
 
 .card > .card-header,
 .card > .table-wrapper,
-.card > .empty-state {
+.card > .empty-state,
+.card > .pagination-container {
   background: var(--card);
   box-shadow: var(--shadow);
 }
@@ -952,8 +953,8 @@ tr.claim-paid td {
 }
 
 .table-wrapper {
-  border-radius: 0 0 var(--radius) var(--radius);
-  overflow-x: auto;
+  border-radius: 0;
+  overflow: visible;
 }
 
 table {
