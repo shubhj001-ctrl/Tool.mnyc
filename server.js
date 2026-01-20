@@ -49,12 +49,14 @@ const claimSchema = new mongoose.Schema({
   assignedTo: { type: String, default: null },
   sharedWith: [String],
   status: { type: String, default: null },
+  actionTaken: { type: String, default: null },
   dateWorked: { type: Date, default: null },
   nextFollowUp: { type: Date, default: null },
   lastWorkedBy: { type: String, default: null },
   history: [{
     remarks: String,
     status: String,
+    actionTaken: String,
     dateWorked: Date,
     nextFollowUp: Date,
     workedBy: String
