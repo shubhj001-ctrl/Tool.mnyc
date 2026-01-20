@@ -121,6 +121,13 @@ async function handleLogin(event) {
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
+  const loginBtn = event.target.querySelector('button[type="submit"]');
+  
+  // Show loading state
+  const originalBtnText = loginBtn.innerHTML;
+  loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+  loginBtn.disabled = true;
+  loginError.style.display = "none";
   
   try {
     const user = await apiCall('/api/login', 'POST', { username: loginId, password });
@@ -129,6 +136,8 @@ async function handleLogin(event) {
     if (user.role === 'admin') {
       loginError.style.display = "flex";
       document.getElementById("loginErrorText").textContent = "No user found";
+      loginBtn.innerHTML = originalBtnText;
+      loginBtn.disabled = false;
       return;
     }
     
@@ -147,6 +156,9 @@ async function handleLogin(event) {
   } catch (error) {
     loginError.style.display = "flex";
     document.getElementById("loginErrorText").textContent = error.message || "Invalid Employee ID or Password";
+  } finally {
+    loginBtn.innerHTML = originalBtnText;
+    loginBtn.disabled = false;
   }
 }
 
@@ -169,6 +181,13 @@ window.handleAdminLogin = async function(event) {
   const loginId = document.getElementById("adminLoginId").value.toLowerCase().trim();
   const password = document.getElementById("adminLoginPassword").value;
   const loginError = document.getElementById("adminLoginError");
+  const loginBtn = event.target.querySelector('button[type="submit"]');
+  
+  // Show loading state
+  const originalBtnText = loginBtn.innerHTML;
+  loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+  loginBtn.disabled = true;
+  loginError.style.display = "none";
   
   try {
     const user = await apiCall('/api/login', 'POST', { username: loginId, password });
@@ -176,6 +195,8 @@ window.handleAdminLogin = async function(event) {
     if (user.role !== 'admin') {
       loginError.style.display = "flex";
       document.getElementById("adminLoginErrorText").textContent = "This account is not an admin";
+      loginBtn.innerHTML = originalBtnText;
+      loginBtn.disabled = false;
       return;
     }
     
@@ -188,6 +209,9 @@ window.handleAdminLogin = async function(event) {
   } catch (error) {
     loginError.style.display = "flex";
     document.getElementById("adminLoginErrorText").textContent = error.message || "Invalid admin credentials";
+  } finally {
+    loginBtn.innerHTML = originalBtnText;
+    loginBtn.disabled = false;
   }
 };
 
