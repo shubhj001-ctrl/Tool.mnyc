@@ -32,18 +32,49 @@
         <span id="loginErrorText">Invalid credentials</span>
       </div>
       <button type="submit" class="btn btn-primary btn-full">
-        <i class="fas fa-sign-in-alt"></i> Login
+        <i class="fas fa-sign-in-alt"></i> Login as Agent
       </button>
     </form>
-    <div class="login-footer">
-      <p>Demo Credentials:</p>
-      <small>Admin: yashpal / admin123</small><br>
-      <small>Agents: shubham, ravi, chirag / pass123</small>
-      <div class="login-note">
-        <i class="fas fa-info-circle"></i>
-        <small>For multi-user testing, use different browser tabs (not incognito). Click "Refresh" to sync data.</small>
-      </div>
+    <div class="login-divider">
+      <span>or</span>
     </div>
+    <button class="btn btn-outline btn-full" onclick="showAdminLogin()">
+      <i class="fas fa-user-shield"></i> Login as Admin
+    </button>
+  </div>
+</div>
+
+<!-- Admin Login Modal -->
+<div class="modal-backdrop" id="adminLoginModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-shield"></i> Admin Login</h3>
+      <button class="btn-close" onclick="closeAdminLogin()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form onsubmit="handleAdminLogin(event)">
+      <div class="form-group">
+        <label><i class="fas fa-user"></i> Admin Username</label>
+        <input type="text" id="adminLoginId" placeholder="Enter admin username" required />
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-lock"></i> Password</label>
+        <input type="password" id="adminLoginPassword" placeholder="Enter admin password" required />
+      </div>
+      <div class="login-error" id="adminLoginError" style="display: none;">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="adminLoginErrorText">Invalid credentials</span>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeAdminLogin()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -65,7 +96,10 @@
         <span class="user-name" id="userName"></span>
         <span class="user-role" id="userRole"></span>
       </div>
-      <div class="user-avatar" id="userAvatar"></div>
+      <div class="user-avatar" id="userAvatar" onclick="openProfileModal()" title="Edit Profile"></div>
+      <button class="btn btn-outline btn-sm" id="profileBtn" onclick="openProfileModal()" style="display: none;">
+        <i class="fas fa-user-cog"></i> Profile
+      </button>
       <button class="btn btn-secondary" onclick="logout()">
         <i class="fas fa-sign-out-alt"></i> Logout
       </button>
@@ -78,6 +112,9 @@
   <div class="admin-header">
     <h2><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
     <div class="admin-actions">
+      <button class="btn btn-primary" onclick="openUserManagementModal()">
+        <i class="fas fa-users-cog"></i> Manage Users
+      </button>
       <button class="btn btn-outline" onclick="refreshData()">
         <i class="fas fa-sync-alt"></i> Refresh
       </button>
@@ -611,12 +648,118 @@
   </div>
 </div>
 
-<!-- Toast Notification -->
-<div class="toast" id="toast">
-  <i class="fas fa-check-circle"></i>
-  <span id="toastMessage">Changes saved successfully!</span>
+<!-- User Management Modal (Admin) -->
+<div class="modal-backdrop" id="userManagementModal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3><i class="fas fa-users-cog"></i> User Management</h3>
+      <button class="btn-close" onclick="closeUserManagementModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="user-management-content">
+      <div class="user-management-header">
+        <h4><i class="fas fa-user-plus"></i> Create New Agent</h4>
+      </div>
+      
+      <form id="createUserForm" onsubmit="createNewUser(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> Username *</label>
+            <input type="text" id="newUsername" placeholder="Enter username" required />
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-id-badge"></i> Full Name *</label>
+            <input type="text" id="newUserName" placeholder="Enter full name" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" id="newUserEmail" placeholder="Enter email" />
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i> Password *</label>
+            <input type="password" id="newUserPassword" placeholder="Enter password" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-user-plus"></i> Create User
+        </button>
+      </form>
+      
+      <div class="user-list-section">
+        <h4><i class="fas fa-users"></i> Existing Agents</h4>
+        <div class="user-list" id="userList">
+          <!-- Will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeUserManagementModal()">
+        <i class="fas fa-times"></i> Close
+      </button>
+    </div>
+  </div>
 </div>
 
-<script src="app.js"></script>
-</body>
-</html>
+<!-- Profile Modal (Agents) -->
+<div class="modal-backdrop" id="profileModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-cog"></i> Edit Profile</h3>
+      <button class="btn-close" onclick="closeProfileModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="profile-avatar-section">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div class="profile-role" id="profileRole"></div>
+    </div>
+    
+    <form id="profileForm" onsubmit="saveProfile(event)">
+      <div class="form-group">
+        <label><i class="fas fa-user"></i> Username</label>
+        <input type="text" id="profileUsername" disabled />
+        <small class="form-hint">Username cannot be changed</small>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-id-badge"></i> Full Name</label>
+        <input type="text" id="profileName" placeholder="Enter your name" required />
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-envelope"></i> Email</label>
+        <input type="email" id="profileEmail" placeholder="Enter your email" />
+      </div>
+      
+      <div class="password-change-section">
+        <h4><i class="fas fa-key"></i> Change Password</h4>
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="currentPassword" placeholder="Enter current password" />
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newPassword" placeholder="Enter new password" />
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmPassword" placeholder="Confirm new password" />
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeProfileModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

@@ -1729,3 +1729,198 @@ tr.selected:hover {
 .bulk-count-badge i {
   font-size: 1.2rem;
 }
+
+/* ==================== LOGIN DIVIDER ==================== */
+.login-divider {
+  text-align: center;
+  margin: 20px 30px;
+  position: relative;
+}
+
+.login-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+}
+
+.login-divider span {
+  background: white;
+  padding: 0 15px;
+  position: relative;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ==================== USER MANAGEMENT MODAL ==================== */
+.user-management-content {
+  padding: 10px 0;
+}
+
+.user-management-header {
+  margin-bottom: 15px;
+}
+
+.user-management-header h4 {
+  color: var(--primary);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-list-section {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.user-list-section h4 {
+  color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.user-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.user-list-item:hover {
+  background: #e2e8f0;
+}
+
+.user-list-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.user-list-info {
+  flex: 1;
+}
+
+.user-list-name {
+  font-weight: 600;
+  color: var(--text);
+  display: block;
+}
+
+.user-list-details {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.user-list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.user-default-badge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* ==================== PROFILE MODAL ==================== */
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  margin-bottom: 15px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.05);
+}
+
+.profile-role {
+  background: var(--bg);
+  color: var(--text-muted);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.password-change-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.password-change-section h4 {
+  color: var(--text);
+  font-size: 0.95rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Small button variant */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+/* User avatar clickable */
+.user-avatar {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.1);
+}

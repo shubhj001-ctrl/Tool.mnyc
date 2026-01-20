@@ -89,6 +89,32 @@ async function loadClaims() {
   }
 }
 
+// Load users for admin
+let allUsers = [];
+async function loadUsers() {
+  try {
+    allUsers = await apiCall('/api/users');
+    updateEmployeeMap();
+  } catch (error) {
+    console.error('Failed to load users:', error);
+  }
+}
+
+// Update employeeMap dynamically from database
+function updateEmployeeMap() {
+  // Clear and rebuild employeeMap from loaded users
+  allUsers.forEach((user, index) => {
+    const empId = `EMP00${index + 1}`;
+    employeeMap[empId] = {
+      name: user.name,
+      avatar: user.avatar,
+      color: user.color,
+      odoo_id: user.odoo_id,
+      email: user.email
+    };
+  });
+}
+
 // ==================== AUTHENTICATION ====================
 async function handleLogin(event) {
   event.preventDefault();
@@ -98,13 +124,19 @@ async function handleLogin(event) {
   
   try {
     const user = await apiCall('/api/login', 'POST', { username: loginId, password });
-    currentUser = user;
-    // Map user id for compatibility
-    if (currentUser.role === 'agent') {
-      currentUser.id = 'EMP00' + (currentUser.odoo_id === 'shubham' ? '1' : currentUser.odoo_id === 'ravi' ? '2' : '3');
-    } else {
-      currentUser.id = 'ADMIN001';
+    
+    // Check if trying to login as admin from agent login
+    if (user.role === 'admin') {
+      loginError.style.display = "flex";
+      document.getElementById("loginErrorText").textContent = "Please use 'Login as Admin' for admin access";
+      return;
     }
+    
+    currentUser = user;
+    // Map user id dynamically
+    const userIndex = allUsers.findIndex(u => u.odoo_id === currentUser.odoo_id);
+    currentUser.id = userIndex >= 0 ? `EMP00${userIndex + 1}` : `EMP001`;
+    
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
     loginError.style.display = "none";
     showApp();
@@ -113,6 +145,44 @@ async function handleLogin(event) {
     document.getElementById("loginErrorText").textContent = error.message || "Invalid Employee ID or Password";
   }
 }
+
+// Admin login functions
+window.showAdminLogin = function() {
+  document.getElementById("adminLoginModal").style.display = "flex";
+  document.getElementById("adminLoginId").value = "";
+  document.getElementById("adminLoginPassword").value = "";
+  document.getElementById("adminLoginError").style.display = "none";
+};
+
+window.closeAdminLogin = function() {
+  document.getElementById("adminLoginModal").style.display = "none";
+};
+
+window.handleAdminLogin = async function(event) {
+  event.preventDefault();
+  const loginId = document.getElementById("adminLoginId").value.toLowerCase().trim();
+  const password = document.getElementById("adminLoginPassword").value;
+  const loginError = document.getElementById("adminLoginError");
+  
+  try {
+    const user = await apiCall('/api/login', 'POST', { username: loginId, password });
+    
+    if (user.role !== 'admin') {
+      loginError.style.display = "flex";
+      document.getElementById("adminLoginErrorText").textContent = "This account is not an admin";
+      return;
+    }
+    
+    currentUser = user;
+    currentUser.id = 'ADMIN001';
+    localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
+    closeAdminLogin();
+    showApp();
+  } catch (error) {
+    loginError.style.display = "flex";
+    document.getElementById("adminLoginErrorText").textContent = error.message || "Invalid admin credentials";
+  }
+};
 
 function logout() {
   currentUser = null;
@@ -146,6 +216,8 @@ function showApp() {
     document.getElementById("totalLabel").textContent = "All Claims";
     // Show checkbox column for bulk selection
     if (checkboxHeader) checkboxHeader.style.display = "table-cell";
+    // Hide profile button for admin
+    document.getElementById("profileBtn").style.display = "none";
   } else {
     adminControls.style.display = "none";
     agentHeader.style.display = "flex";
@@ -153,14 +225,16 @@ function showApp() {
     document.getElementById("totalLabel").textContent = "My Claims";
     // Hide checkbox column for agents
     if (checkboxHeader) checkboxHeader.style.display = "none";
+    // Show profile button for agents
+    document.getElementById("profileBtn").style.display = "inline-flex";
   }
   
   // Clear any previous selection
   selectedClaims.clear();
   updateBulkActionBar();
   
-  // Load claims from server
-  loadClaims();
+  // Load users first (for dynamic employee mapping), then load claims
+  loadUsers().then(() => loadClaims());
 }
 
 // Check for existing session
@@ -168,7 +242,8 @@ function checkSession() {
   const savedUser = localStorage.getItem("mnyc_currentUser");
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
-    showApp();
+    // Load users first for proper mapping
+    loadUsers().then(() => showApp());
   }
 }
 
@@ -1263,8 +1338,181 @@ saveBtn.onclick = async () => {
 
 // ==================== REFRESH DATA ====================
 window.refreshData = function() {
-  loadClaims();
+  loadUsers().then(() => loadClaims());
   showToast('Data refreshed successfully!');
+};
+
+// ==================== USER MANAGEMENT FUNCTIONS (ADMIN) ====================
+window.openUserManagementModal = function() {
+  document.getElementById("userManagementModal").style.display = "flex";
+  document.getElementById("createUserForm").reset();
+  renderUserList();
+};
+
+window.closeUserManagementModal = function() {
+  document.getElementById("userManagementModal").style.display = "none";
+};
+
+function renderUserList() {
+  const userList = document.getElementById("userList");
+  
+  if (allUsers.length === 0) {
+    userList.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+        <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px;"></i>
+        <p>No agents found</p>
+      </div>
+    `;
+    return;
+  }
+  
+  userList.innerHTML = allUsers.map((user, index) => `
+    <div class="user-list-item">
+      <div class="user-list-avatar" style="background: ${user.color}">${user.avatar}</div>
+      <div class="user-list-info">
+        <span class="user-list-name">${user.name}</span>
+        <span class="user-list-details">@${user.odoo_id} · ${user.email || 'No email'}</span>
+      </div>
+      ${user.isDefaultPassword ? '<span class="user-default-badge">Default Password</span>' : ''}
+      <div class="user-list-actions">
+        <button class="btn-icon btn-icon-danger" onclick="deleteUser('${user.odoo_id}')" title="Delete user">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.createNewUser = async function(event) {
+  event.preventDefault();
+  
+  const username = document.getElementById("newUsername").value.trim().toLowerCase();
+  const name = document.getElementById("newUserName").value.trim();
+  const email = document.getElementById("newUserEmail").value.trim();
+  const password = document.getElementById("newUserPassword").value;
+  
+  if (!username || !name || !password) {
+    showToast("Please fill in all required fields", "error");
+    return;
+  }
+  
+  try {
+    await apiCall('/api/users', 'POST', { username, name, email, password });
+    showToast(`User "${name}" created successfully!`);
+    document.getElementById("createUserForm").reset();
+    await loadUsers();
+    renderUserList();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+};
+
+window.deleteUser = async function(userId) {
+  if (!confirm(`Are you sure you want to delete user "${userId}"? This action cannot be undone.`)) {
+    return;
+  }
+  
+  try {
+    await apiCall(`/api/users/${userId}`, 'DELETE');
+    showToast("User deleted successfully!");
+    await loadUsers();
+    renderUserList();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+};
+
+// ==================== PROFILE FUNCTIONS (AGENTS) ====================
+window.openProfileModal = function() {
+  if (!currentUser) return;
+  
+  // Only agents can edit profile
+  if (currentUser.role !== 'agent') {
+    showToast("Admin profile editing not available", "error");
+    return;
+  }
+  
+  document.getElementById("profileAvatar").textContent = currentUser.avatar;
+  document.getElementById("profileAvatar").style.background = currentUser.color;
+  document.getElementById("profileRole").textContent = currentUser.role === 'admin' ? 'Administrator' : 'Agent';
+  document.getElementById("profileUsername").value = currentUser.odoo_id;
+  document.getElementById("profileName").value = currentUser.name;
+  document.getElementById("profileEmail").value = currentUser.email || '';
+  
+  // Clear password fields
+  document.getElementById("currentPassword").value = "";
+  document.getElementById("newPassword").value = "";
+  document.getElementById("confirmPassword").value = "";
+  
+  document.getElementById("profileModal").style.display = "flex";
+};
+
+window.closeProfileModal = function() {
+  document.getElementById("profileModal").style.display = "none";
+};
+
+window.saveProfile = async function(event) {
+  event.preventDefault();
+  
+  const name = document.getElementById("profileName").value.trim();
+  const email = document.getElementById("profileEmail").value.trim();
+  const currentPassword = document.getElementById("currentPassword").value;
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  
+  if (!name) {
+    showToast("Name is required", "error");
+    return;
+  }
+  
+  // Validate password change
+  if (newPassword || currentPassword) {
+    if (!currentPassword) {
+      showToast("Current password is required to change password", "error");
+      return;
+    }
+    if (!newPassword) {
+      showToast("New password is required", "error");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast("New passwords do not match", "error");
+      return;
+    }
+    if (newPassword.length < 4) {
+      showToast("New password must be at least 4 characters", "error");
+      return;
+    }
+  }
+  
+  try {
+    const updateData = { name, email };
+    if (newPassword) {
+      updateData.currentPassword = currentPassword;
+      updateData.newPassword = newPassword;
+    }
+    
+    const result = await apiCall(`/api/users/${currentUser.odoo_id}`, 'PUT', updateData);
+    
+    // Update current user data
+    currentUser.name = result.user.name;
+    currentUser.email = result.user.email;
+    currentUser.avatar = result.user.avatar;
+    localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
+    
+    // Update header
+    document.getElementById("userName").textContent = currentUser.name;
+    document.getElementById("userAvatar").textContent = currentUser.avatar;
+    
+    closeProfileModal();
+    showToast("Profile updated successfully!");
+    
+    if (newPassword) {
+      showToast("Password changed! Please use your new password next time.", "success");
+    }
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 };
 
 // ==================== INITIALIZATION ====================

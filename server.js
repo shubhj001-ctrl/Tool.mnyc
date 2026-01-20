@@ -24,11 +24,14 @@ mongoose.connect(MONGODB_URI)
 const userSchema = new mongoose.Schema({
   odoo_id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
+  email: { type: String, default: null },
   password: { type: String, required: true },
   role: { type: String, enum: ['admin', 'agent'], default: 'agent' },
   avatar: String,
   color: String,
-  createdAt: { type: Date, default: Date.now }
+  isDefaultPassword: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 // Claim Schema
@@ -89,9 +92,11 @@ app.post('/api/login', async (req, res) => {
       id: user.odoo_id.toUpperCase(),
       odoo_id: user.odoo_id,
       name: user.name,
+      email: user.email,
       role: user.role,
       avatar: user.avatar,
-      color: user.color
+      color: user.color,
+      isDefaultPassword: user.isDefaultPassword
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -104,6 +109,126 @@ app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find({ role: 'agent' }).select('-password');
     res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single user
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findOne({ odoo_id: req.params.id }).select('-password');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new user (admin only)
+app.post('/api/users', async (req, res) => {
+  try {
+    const { username, name, email, password, color } = req.body;
+    
+    if (!username || !name || !password) {
+      return res.status(400).json({ error: 'Username, name, and password are required' });
+    }
+    
+    // Check if user already exists
+    const existing = await User.findOne({ odoo_id: username.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+    
+    // Generate avatar from first letter of name
+    const avatar = name.charAt(0).toUpperCase();
+    
+    // Get next employee ID
+    const agentCount = await User.countDocuments({ role: 'agent' });
+    const empId = `EMP00${agentCount + 1}`;
+    
+    const user = new User({
+      odoo_id: username.toLowerCase(),
+      name,
+      email: email || null,
+      password,
+      role: 'agent',
+      avatar,
+      color: color || '#' + Math.floor(Math.random()*16777215).toString(16),
+      isDefaultPassword: true
+    });
+    
+    await user.save();
+    
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        odoo_id: user.odoo_id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        color: user.color,
+        empId
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user profile
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { name, email, currentPassword, newPassword } = req.body;
+    const user = await User.findOne({ odoo_id: req.params.id });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // If changing password, verify current password
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ error: 'Current password is required to change password' });
+      }
+      if (user.password !== currentPassword) {
+        return res.status(401).json({ error: 'Current password is incorrect' });
+      }
+      user.password = newPassword;
+      user.isDefaultPassword = false;
+    }
+    
+    // Update other fields
+    if (name) user.name = name;
+    if (email !== undefined) user.email = email;
+    if (name) user.avatar = name.charAt(0).toUpperCase();
+    user.updatedAt = new Date();
+    
+    await user.save();
+    
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        odoo_id: user.odoo_id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        color: user.color
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete user (admin only)
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findOneAndDelete({ odoo_id: req.params.id, role: 'agent' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -196,10 +321,10 @@ async function seedDatabase() {
     if (userCount === 0) {
       console.log('🌱 Seeding users...');
       await User.insertMany([
-        { odoo_id: 'yashpal', name: 'Yashpal', password: 'admin123', role: 'admin', avatar: 'Y', color: '#7c3aed' },
-        { odoo_id: 'shubham', name: 'Shubham', password: 'pass123', role: 'agent', avatar: 'S', color: '#3b82f6' },
-        { odoo_id: 'ravi', name: 'Ravi', password: 'pass123', role: 'agent', avatar: 'R', color: '#10b981' },
-        { odoo_id: 'chirag', name: 'Chirag', password: 'pass123', role: 'agent', avatar: 'C', color: '#f59e0b' }
+        { odoo_id: 'yashpal', name: 'Yashpal', email: 'yashpal@mnyc.com', password: 'admin123', role: 'admin', avatar: 'Y', color: '#7c3aed', isDefaultPassword: true },
+        { odoo_id: 'shubham', name: 'Shubham', email: 'shubham@mnyc.com', password: 'pass123', role: 'agent', avatar: 'S', color: '#3b82f6', isDefaultPassword: true },
+        { odoo_id: 'ravi', name: 'Ravi', email: 'ravi@mnyc.com', password: 'pass123', role: 'agent', avatar: 'R', color: '#10b981', isDefaultPassword: true },
+        { odoo_id: 'chirag', name: 'Chirag', email: 'chirag@mnyc.com', password: 'pass123', role: 'agent', avatar: 'C', color: '#f59e0b', isDefaultPassword: true }
       ]);
       console.log('✅ Users seeded');
     }
