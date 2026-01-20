@@ -12,26 +12,10 @@ let currentUser = null;
 let importedData = [];
 let claims = [];
 
-// ==================== DOM ELEMENTS ====================
-const tbody = document.getElementById("claimsBody");
-const modal = document.getElementById("modal");
-const historyModal = document.getElementById("historyModal");
-const addClaimModal = document.getElementById("addClaimModal");
-const importModal = document.getElementById("importModal");
-const assignModal = document.getElementById("assignModal");
-const shareModal = document.getElementById("shareModal");
-const detailModal = document.getElementById("detailModal");
-const remarksInput = document.getElementById("remarksInput");
-const statusInput = document.getElementById("statusInput");
-const followUpDaysInput = document.getElementById("followUpDays");
-const saveBtn = document.getElementById("saveBtn");
-const claimSummary = document.getElementById("claimSummary");
-const historyClaimSummary = document.getElementById("historyClaimSummary");
-const historyTimeline = document.getElementById("historyTimeline");
-const toast = document.getElementById("toast");
-const toastMessage = document.getElementById("toastMessage");
-const loginScreen = document.getElementById("loginScreen");
-const appContainer = document.getElementById("appContainer");
+// ==================== DOM ELEMENTS (initialized after DOM loads) ====================
+let tbody, modal, historyModal, addClaimModal, importModal, assignModal, shareModal, detailModal;
+let remarksInput, statusInput, followUpDaysInput, saveBtn, claimSummary;
+let historyClaimSummary, historyTimeline, toast, toastMessage, loginScreen, appContainer;
 
 let activeClaimId = null;
 let assignClaimId = null;
@@ -40,6 +24,52 @@ let detailClaimId = null;
 let currentFilter = "all";
 let agentQueue = "my"; // 'my', 'shared', 'all'
 let selectedClaims = new Set(); // Track selected claim IDs for bulk actions
+
+// Initialize DOM elements after page loads
+function initDOMElements() {
+  tbody = document.getElementById("claimsBody");
+  modal = document.getElementById("modal");
+  historyModal = document.getElementById("historyModal");
+  addClaimModal = document.getElementById("addClaimModal");
+  importModal = document.getElementById("importModal");
+  assignModal = document.getElementById("assignModal");
+  shareModal = document.getElementById("shareModal");
+  detailModal = document.getElementById("detailModal");
+  remarksInput = document.getElementById("remarksInput");
+  statusInput = document.getElementById("statusInput");
+  followUpDaysInput = document.getElementById("followUpDays");
+  saveBtn = document.getElementById("saveBtn");
+  claimSummary = document.getElementById("claimSummary");
+  historyClaimSummary = document.getElementById("historyClaimSummary");
+  historyTimeline = document.getElementById("historyTimeline");
+  toast = document.getElementById("toast");
+  toastMessage = document.getElementById("toastMessage");
+  loginScreen = document.getElementById("loginScreen");
+  appContainer = document.getElementById("appContainer");
+  
+  // Setup save button click handler
+  if (saveBtn) {
+    saveBtn.onclick = saveWork;
+  }
+  
+  // Setup file upload drag and drop
+  const fileUploadArea = document.getElementById("fileUploadArea");
+  if (fileUploadArea) {
+    fileUploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      fileUploadArea.classList.add("dragover");
+    });
+    fileUploadArea.addEventListener("dragleave", () => {
+      fileUploadArea.classList.remove("dragover");
+    });
+    fileUploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      fileUploadArea.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      if (file) processExcelFile(file);
+    });
+  }
+}
 
 // ==================== API FUNCTIONS ====================
 async function apiCall(endpoint, method = 'GET', data = null) {
@@ -117,15 +147,10 @@ function updateEmployeeMap() {
 
 // ==================== AUTHENTICATION ====================
 window.handleLogin = async function() {
-  console.log("handleLogin called"); // Debug log
-  alert("Login function triggered!"); // Temporary debug alert
-  
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
   const loginBtn = document.getElementById("loginBtn");
-  
-  console.log("Login attempt for:", loginId); // Debug log
   
   if (!loginId || !password) {
     loginError.style.display = "flex";
@@ -1143,25 +1168,6 @@ window.closeImportModal = function() {
   importModal.style.display = "none";
 };
 
-// Drag and drop handling
-const fileUploadArea = document.getElementById("fileUploadArea");
-
-fileUploadArea?.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  fileUploadArea.classList.add("dragover");
-});
-
-fileUploadArea?.addEventListener("dragleave", () => {
-  fileUploadArea.classList.remove("dragover");
-});
-
-fileUploadArea?.addEventListener("drop", (e) => {
-  e.preventDefault();
-  fileUploadArea.classList.remove("dragover");
-  const file = e.dataTransfer.files[0];
-  if (file) processExcelFile(file);
-});
-
 window.handleFileSelect = function(event) {
   const file = event.target.files[0];
   if (file) processExcelFile(file);
@@ -1282,7 +1288,7 @@ window.importClaims = async function() {
 };
 
 // ==================== SAVE WORK ====================
-saveBtn.onclick = async () => {
+async function saveWork() {
   if (!remarksInput.value.trim()) {
     showToast("Remarks are required", "error");
     return;
@@ -1323,7 +1329,7 @@ saveBtn.onclick = async () => {
   } catch (error) {
     showToast(error.message, "error");
   }
-};
+}
 
 // ==================== REFRESH DATA ====================
 window.refreshData = function() {
@@ -1505,12 +1511,18 @@ window.saveProfile = async function(event) {
 };
 
 // ==================== INITIALIZATION ====================
-// Check for existing session on page load
-checkSession();
-
-// Auto-refresh every 30 seconds when app is visible
-setInterval(() => {
-  if (currentUser && document.visibilityState === 'visible') {
-    loadClaims();
-  }
-}, 30000);
+// Wait for DOM to be ready before initializing
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize all DOM element references
+  initDOMElements();
+  
+  // Check for existing session on page load
+  checkSession();
+  
+  // Auto-refresh every 30 seconds when app is visible
+  setInterval(() => {
+    if (currentUser && document.visibilityState === 'visible') {
+      loadClaims();
+    }
+  }, 30000);
+});
