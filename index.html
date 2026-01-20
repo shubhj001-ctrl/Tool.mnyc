@@ -229,9 +229,9 @@
   <div class="filter-group">
     <div class="filter-buttons">
       <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
-      <button class="filter-btn" data-filter="waiting" onclick="setFilter('waiting')">Waiting</button>
-      <button class="filter-btn" data-filter="unpaid" onclick="setFilter('unpaid')">Unpaid</button>
-      <button class="filter-btn" data-filter="paid" onclick="setFilter('paid')">Paid</button>
+      <button class="filter-btn" data-filter="P-1" onclick="setFilter('P-1')">P-1</button>
+      <button class="filter-btn" data-filter="P-2" onclick="setFilter('P-2')">P-2</button>
+      <button class="filter-btn" data-filter="CHERRY" onclick="setFilter('CHERRY')">CHERRY</button>
     </div>
     <select class="agent-filter" id="agentFilter" onchange="filterClaims()" style="display: none;">
       <option value="all">All Agents</option>
@@ -278,6 +278,9 @@
           <th>Claim #</th>
           <th>Patient</th>
           <th>Balance</th>
+          <th>Priority</th>
+          <th class="admin-only-col" style="display: none;">Age</th>
+          <th class="admin-only-col" style="display: none;">Age Bucket</th>
           <th>Assigned To</th>
           <th>Status</th>
           <th>Date Worked</th>
@@ -486,9 +489,12 @@
         <span class="column-tag">ClaimNo</span>
         <span class="column-tag">Patient</span>
         <span class="column-tag">Balance</span>
+        <span class="column-tag">Priority</span>
+        <span class="column-tag">Age</span>
+        <span class="column-tag">AgeBucket</span>
         <span class="column-tag">AssignTo (optional)</span>
       </div>
-      <p><small>AssignTo values: EMP001 (Shubham), EMP002 (Ravi), EMP003 (Chirag)</small></p>
+      <p><small>Priority values: P-1, P-2, CHERRY | AssignTo: EMP001, EMP002, EMP003</small></p>
     </div>
 
     <div class="file-upload-area" id="fileUploadArea">

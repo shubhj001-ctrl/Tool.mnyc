@@ -45,6 +45,9 @@ const claimSchema = new mongoose.Schema({
   acctNo: { type: String, default: null }, // Account Number
   primaryPayer: { type: String, default: null },
   billedCharges: { type: Number, default: 0 },
+  priority: { type: String, default: null }, // P-1, P-2, CHERRY, etc.
+  age: { type: Number, default: null }, // Age in days
+  ageBucket: { type: String, default: null }, // Age bucket category
   // Assignment fields
   assignedTo: { type: String, default: null },
   sharedWith: [String],

@@ -1028,6 +1028,43 @@ tbody tr:last-child td {
   font-weight: bold;
 }
 
+/* Priority Badges */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.priority-none {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.priority-default {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.priority-p1 {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.priority-p2 {
+  background: #fed7aa;
+  color: #c2410c;
+}
+
+.priority-cherry {
+  background: #d1fae5;
+  color: #065f46;
+}
+
 /* Due Classes */
 .due-today {
   background: var(--yellow) !important;

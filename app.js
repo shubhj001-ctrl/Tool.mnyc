@@ -218,6 +218,7 @@ function showApp() {
   const agentHeader = document.getElementById("agentHeader");
   const agentFilter = document.getElementById("agentFilter");
   const checkboxHeader = document.getElementById("checkboxHeader");
+  const adminOnlyCols = document.querySelectorAll(".admin-only-col");
   
   if (currentUser.role === "admin") {
     adminControls.style.display = "block";
@@ -226,6 +227,8 @@ function showApp() {
     document.getElementById("totalLabel").textContent = "All Claims";
     // Show checkbox column for bulk selection
     if (checkboxHeader) checkboxHeader.style.display = "table-cell";
+    // Show admin-only columns (Age, Age Bucket)
+    adminOnlyCols.forEach(col => col.style.display = "table-cell");
     // Hide profile button for admin
     document.getElementById("profileBtn").style.display = "none";
   } else {
@@ -235,6 +238,8 @@ function showApp() {
     document.getElementById("totalLabel").textContent = "My Claims";
     // Hide checkbox column for agents
     if (checkboxHeader) checkboxHeader.style.display = "none";
+    // Hide admin-only columns (Age, Age Bucket)
+    adminOnlyCols.forEach(col => col.style.display = "none");
     // Show profile button for agents
     document.getElementById("profileBtn").style.display = "inline-flex";
   }
@@ -301,6 +306,21 @@ function getStatusBadge(status) {
   }
   
   return `<span class="status-badge ${statusClass}">${status}</span>`;
+}
+
+function getPriorityBadge(priority) {
+  if (!priority) return `<span class="priority-badge priority-none">—</span>`;
+  
+  let priorityClass = "priority-default";
+  if (priority === "P-1") {
+    priorityClass = "priority-p1";
+  } else if (priority === "P-2") {
+    priorityClass = "priority-p2";
+  } else if (priority === "CHERRY") {
+    priorityClass = "priority-cherry";
+  }
+  
+  return `<span class="priority-badge ${priorityClass}">${priority}</span>`;
 }
 
 function getActionBadge(action) {
@@ -430,8 +450,8 @@ function getFilteredClaims() {
       c.claimNo.toLowerCase().includes(searchTerm) ||
       c.patient.toLowerCase().includes(searchTerm);
     
-    // Status filter
-    const matchesFilter = currentFilter === "all" || c.status === currentFilter;
+    // Priority filter (changed from status filter)
+    const matchesPriority = currentFilter === "all" || c.priority === currentFilter;
     
     // Agent filter (for admin) or queue filter (for agents)
     let matchesAgent = true;
@@ -458,7 +478,7 @@ function getFilteredClaims() {
       }
     }
     
-    return matchesSearch && matchesFilter && matchesAgent;
+    return matchesSearch && matchesPriority && matchesAgent;
   });
 }
 
@@ -516,11 +536,19 @@ function render() {
       </td>
     ` : '';
     
+    // Admin-only columns for Age and Age Bucket
+    const adminOnlyCols = currentUser.role === "admin" ? `
+      <td class="admin-only-col">${c.age || '-'}</td>
+      <td class="admin-only-col">${c.ageBucket || '-'}</td>
+    ` : '';
+    
     tr.innerHTML = `
       ${checkboxCell}
       <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;"><strong>${c.claimNo}</strong></a></td>
       <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;">${c.patient}</a></td>
       <td><span class="balance-amount ${c.balance > 500 ? 'balance-high' : ''}">${formatCurrency(c.balance)}</span></td>
+      <td>${getPriorityBadge(c.priority)}</td>
+      ${adminOnlyCols}
       <td>${getAssignedBadge(c.assignedTo)}${sharedIndicator}</td>
       <td>${getStatusBadge(c.status)}</td>
       <td>${c.dateWorked ? new Date(c.dateWorked).toLocaleString() : "-"}</td>
@@ -1234,6 +1262,9 @@ function processExcelFile(file) {
           acctNo: row.AcctNo || row["Acct #"] || row["Acct#"] || row.AccountNo || row["Account #"] || row.acctNo || null,
           primaryPayer: row.PrimaryPayer || row["Primary Payer"] || row.Payer || row.primaryPayer || null,
           billedCharges: parseFloat(row.BilledCharges || row["Billed Charges"] || row.billedCharges || 0) || 0,
+          priority: row.Priority || row.priority || row["Priority"] || null,
+          age: parseInt(row.Age || row.age || 0) || null,
+          ageBucket: row.AgeBucket || row["Age Bucket"] || row.ageBucket || row["AgeBucket"] || null,
           assignedTo: row.AssignTo || row.assignTo || row.AssignedTo || row["Assign To"] || null
         };
       }).filter(row => row.claimNo && row.patient);
@@ -1282,6 +1313,9 @@ window.importClaims = async function() {
     acctNo: row.acctNo,
     primaryPayer: row.primaryPayer,
     billedCharges: row.billedCharges,
+    priority: row.priority,
+    age: row.age,
+    ageBucket: row.ageBucket,
     assignedTo: row.assignedTo || null,
     sharedWith: [],
     status: null,
