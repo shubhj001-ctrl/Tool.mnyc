@@ -117,10 +117,15 @@ function updateEmployeeMap() {
 
 // ==================== AUTHENTICATION ====================
 window.handleLogin = async function() {
+  console.log("handleLogin called"); // Debug log
+  alert("Login function triggered!"); // Temporary debug alert
+  
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
   const loginError = document.getElementById("loginError");
   const loginBtn = document.getElementById("loginBtn");
+  
+  console.log("Login attempt for:", loginId); // Debug log
   
   if (!loginId || !password) {
     loginError.style.display = "flex";
