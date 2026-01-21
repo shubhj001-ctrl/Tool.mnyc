@@ -109,64 +109,18 @@
   </div>
   
   <!-- Employee Overview Cards -->
-  <div class="employee-overview">
-    <div class="employee-card" id="empCard_EMP001">
-      <div class="employee-avatar" style="background: #3b82f6;">S</div>
-      <div class="employee-info">
-        <h4>Shubham</h4>
-        <span class="employee-id">EMP001</span>
-      </div>
-      <div class="employee-stats">
-        <div class="emp-stat">
-          <span class="emp-stat-value" id="empTotal_EMP001">0</span>
-          <span class="emp-stat-label">Total</span>
-        </div>
-        <div class="emp-stat">
-          <span class="emp-stat-value emp-stat-danger" id="empOverdue_EMP001">0</span>
-          <span class="emp-stat-label">Overdue</span>
-        </div>
-      </div>
-      <span class="online-status" id="status_EMP001"></span>
+  <div class="employee-carousel-wrapper">
+    <button class="carousel-arrow carousel-prev" id="empCarouselPrev" onclick="scrollEmployeeCards(-1)">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <div class="employee-overview" id="employeeCardsContainer">
+      <!-- Employee cards will be dynamically generated -->
     </div>
-    
-    <div class="employee-card" id="empCard_EMP002">
-      <div class="employee-avatar" style="background: #10b981;">R</div>
-      <div class="employee-info">
-        <h4>Ravi</h4>
-        <span class="employee-id">EMP002</span>
-      </div>
-      <div class="employee-stats">
-        <div class="emp-stat">
-          <span class="emp-stat-value" id="empTotal_EMP002">0</span>
-          <span class="emp-stat-label">Total</span>
-        </div>
-        <div class="emp-stat">
-          <span class="emp-stat-value emp-stat-danger" id="empOverdue_EMP002">0</span>
-          <span class="emp-stat-label">Overdue</span>
-        </div>
-      </div>
-      <span class="online-status" id="status_EMP002"></span>
-    </div>
-    
-    <div class="employee-card" id="empCard_EMP003">
-      <div class="employee-avatar" style="background: #f59e0b;">C</div>
-      <div class="employee-info">
-        <h4>Chirag</h4>
-        <span class="employee-id">EMP003</span>
-      </div>
-      <div class="employee-stats">
-        <div class="emp-stat">
-          <span class="emp-stat-value" id="empTotal_EMP003">0</span>
-          <span class="emp-stat-label">Total</span>
-        </div>
-        <div class="emp-stat">
-          <span class="emp-stat-value emp-stat-danger" id="empOverdue_EMP003">0</span>
-          <span class="emp-stat-label">Overdue</span>
-        </div>
-      </div>
-      <span class="online-status" id="status_EMP003"></span>
-    </div>
+    <button class="carousel-arrow carousel-next" id="empCarouselNext" onclick="scrollEmployeeCards(1)">
+      <i class="fas fa-chevron-right"></i>
+    </button>
   </div>
+  <div class="carousel-dots" id="carouselDots"></div>
 </div>
 
 <!-- Agent Header (Only visible to agents) -->
@@ -253,9 +207,7 @@
     </div>
     <select class="agent-filter" id="agentFilter" onchange="filterClaims()" style="display: none;">
       <option value="all">All Agents</option>
-      <option value="EMP001">Shubham</option>
-      <option value="EMP002">Ravi</option>
-      <option value="EMP003">Chirag</option>
+      <!-- Agent options will be populated dynamically -->
       <option value="unassigned">Unassigned</option>
     </select>
   </div>
@@ -572,9 +524,7 @@
       <label><i class="fas fa-user-tie"></i> Assign To Agent</label>
       <select id="assignAgentSelect">
         <option value="">-- Select Agent --</option>
-        <option value="EMP001">Shubham (EMP001)</option>
-        <option value="EMP002">Ravi (EMP002)</option>
-        <option value="EMP003">Chirag (EMP003)</option>
+        <!-- Agent options will be populated dynamically -->
       </select>
     </div>
 
@@ -675,9 +625,7 @@
       <label><i class="fas fa-user-tie"></i> Assign All To</label>
       <select id="bulkAssignAgentSelect">
         <option value="">-- Select Agent --</option>
-        <option value="EMP001">Shubham (EMP001)</option>
-        <option value="EMP002">Ravi (EMP002)</option>
-        <option value="EMP003">Chirag (EMP003)</option>
+        <!-- Agent options will be populated dynamically -->
       </select>
     </div>
 

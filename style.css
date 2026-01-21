@@ -367,11 +367,73 @@ body {
   color: white;
 }
 
+/* Employee Overview Carousel */
+.employee-carousel-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+}
+
+.carousel-arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.carousel-arrow:hover {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+.carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.carousel-dot:hover {
+  background: var(--secondary);
+}
+
+.carousel-dot.active {
+  background: var(--primary);
+  transform: scale(1.2);
+}
+
 /* Employee Overview Cards */
 .employee-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+  flex: 1;
+  min-width: 0;
 }
 
 .employee-card {
@@ -1918,7 +1980,16 @@ tbody tr:last-child td {
   }
   
   .employee-overview {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .employee-carousel-wrapper {
+    flex-wrap: nowrap;
+  }
+  
+  .carousel-arrow {
+    width: 32px;
+    height: 32px;
   }
 }
 

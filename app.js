@@ -127,6 +127,8 @@ async function loadUsers() {
   try {
     allUsers = await apiCall('/api/users');
     updateEmployeeMap();
+    populateAgentDropdowns();
+    renderEmployeeCards();
   } catch (error) {
     console.error('Failed to load users:', error);
   }
@@ -371,6 +373,158 @@ function updateStats() {
   document.getElementById("pendingClaims").textContent = pending;
   document.getElementById("paidClaims").textContent = paid;
   document.getElementById("overdueClaims").textContent = overdue;
+}
+
+let employeeCarouselPage = 0;
+const employeesPerPage = 4;
+
+function renderEmployeeCards() {
+  if (!currentUser || currentUser.role !== "admin") return;
+  
+  const container = document.getElementById('employeeCardsContainer');
+  if (!container) return;
+  
+  const empIds = Object.keys(employeeMap);
+  const totalPages = Math.ceil(empIds.length / employeesPerPage);
+  
+  // Ensure current page is valid
+  if (employeeCarouselPage >= totalPages) employeeCarouselPage = 0;
+  if (employeeCarouselPage < 0) employeeCarouselPage = totalPages - 1;
+  
+  const startIdx = employeeCarouselPage * employeesPerPage;
+  const visibleEmps = empIds.slice(startIdx, startIdx + employeesPerPage);
+  
+  let html = '';
+  visibleEmps.forEach(empId => {
+    const emp = employeeMap[empId];
+    html += `
+      <div class="employee-card" id="empCard_${empId}">
+        <div class="employee-avatar" style="background: ${emp.color};">${emp.avatar}</div>
+        <div class="employee-info">
+          <h4>${emp.name}</h4>
+          <span class="employee-id">${empId}</span>
+        </div>
+        <div class="employee-stats">
+          <div class="emp-stat">
+            <span class="emp-stat-value" id="empTotal_${empId}">0</span>
+            <span class="emp-stat-label">Total</span>
+          </div>
+          <div class="emp-stat">
+            <span class="emp-stat-value emp-stat-danger" id="empOverdue_${empId}">0</span>
+            <span class="emp-stat-label">Overdue</span>
+          </div>
+        </div>
+        <span class="online-status" id="status_${empId}"></span>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+  
+  // Update navigation arrows visibility
+  const prevBtn = document.getElementById('empCarouselPrev');
+  const nextBtn = document.getElementById('empCarouselNext');
+  if (prevBtn) prevBtn.style.visibility = totalPages > 1 ? 'visible' : 'hidden';
+  if (nextBtn) nextBtn.style.visibility = totalPages > 1 ? 'visible' : 'hidden';
+  
+  // Update dots
+  renderCarouselDots(totalPages);
+  
+  // Update stats for visible cards
+  updateEmployeeStats();
+}
+
+function renderCarouselDots(totalPages) {
+  const dotsContainer = document.getElementById('carouselDots');
+  if (!dotsContainer || totalPages <= 1) {
+    if (dotsContainer) dotsContainer.innerHTML = '';
+    return;
+  }
+  
+  let dotsHtml = '';
+  for (let i = 0; i < totalPages; i++) {
+    dotsHtml += `<span class="carousel-dot ${i === employeeCarouselPage ? 'active' : ''}" onclick="goToEmployeePage(${i})"></span>`;
+  }
+  dotsContainer.innerHTML = dotsHtml;
+}
+
+window.scrollEmployeeCards = function(direction) {
+  const empIds = Object.keys(employeeMap);
+  const totalPages = Math.ceil(empIds.length / employeesPerPage);
+  
+  employeeCarouselPage += direction;
+  if (employeeCarouselPage >= totalPages) employeeCarouselPage = 0;
+  if (employeeCarouselPage < 0) employeeCarouselPage = totalPages - 1;
+  
+  renderEmployeeCards();
+};
+
+window.goToEmployeePage = function(page) {
+  employeeCarouselPage = page;
+  renderEmployeeCards();
+};
+
+function populateAgentDropdowns() {
+  const empIds = Object.keys(employeeMap);
+  
+  // Agent filter dropdown
+  const agentFilter = document.getElementById('agentFilter');
+  if (agentFilter) {
+    // Keep first option (All Agents) and last option (Unassigned)
+    const firstOption = agentFilter.querySelector('option[value="all"]');
+    const lastOption = agentFilter.querySelector('option[value="unassigned"]');
+    agentFilter.innerHTML = '';
+    if (firstOption) agentFilter.appendChild(firstOption);
+    
+    empIds.forEach(empId => {
+      const emp = employeeMap[empId];
+      const option = document.createElement('option');
+      option.value = empId;
+      option.textContent = emp.name;
+      agentFilter.appendChild(option);
+    });
+    
+    if (lastOption) agentFilter.appendChild(lastOption);
+  }
+  
+  // Assign agent dropdown
+  const assignAgentSelect = document.getElementById('assignAgentSelect');
+  if (assignAgentSelect) {
+    assignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
+    empIds.forEach(empId => {
+      const emp = employeeMap[empId];
+      const option = document.createElement('option');
+      option.value = empId;
+      option.textContent = `${emp.name} (${empId})`;
+      assignAgentSelect.appendChild(option);
+    });
+  }
+  
+  // Bulk assign agent dropdown
+  const bulkAssignAgentSelect = document.getElementById('bulkAssignAgentSelect');
+  if (bulkAssignAgentSelect) {
+    bulkAssignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
+    empIds.forEach(empId => {
+      const emp = employeeMap[empId];
+      const option = document.createElement('option');
+      option.value = empId;
+      option.textContent = `${emp.name} (${empId})`;
+      bulkAssignAgentSelect.appendChild(option);
+    });
+  }
+  
+  // Agent queue filter (for agents viewing all)
+  const agentQueueFilter = document.getElementById('agentQueueFilter');
+  if (agentQueueFilter) {
+    agentQueueFilter.innerHTML = '<option value="all">All Agents</option>';
+    empIds.forEach(empId => {
+      const emp = employeeMap[empId];
+      const option = document.createElement('option');
+      option.value = empId;
+      option.textContent = emp.name;
+      agentQueueFilter.appendChild(option);
+    });
+  }
 }
 
 function updateEmployeeStats() {
