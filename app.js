@@ -528,14 +528,13 @@ window.goToEmployeePage = function(page) {
 function populateAgentDropdowns() {
   const empIds = Object.keys(employeeMap);
   
-  // Agent filter dropdown
-  const agentFilter = document.getElementById('agentFilter');
-  if (agentFilter) {
+  // Agent filter dropdowns (both hidden and visible)
+  document.querySelectorAll('#agentFilter').forEach(agentFilter => {
     // Keep first option (All Agents) and last option (Unassigned)
     const firstOption = agentFilter.querySelector('option[value="all"]');
     const lastOption = agentFilter.querySelector('option[value="unassigned"]');
     agentFilter.innerHTML = '';
-    if (firstOption) agentFilter.appendChild(firstOption);
+    if (firstOption) agentFilter.appendChild(firstOption.cloneNode(true));
     
     empIds.forEach(empId => {
       const emp = employeeMap[empId];
@@ -545,8 +544,8 @@ function populateAgentDropdowns() {
       agentFilter.appendChild(option);
     });
     
-    if (lastOption) agentFilter.appendChild(lastOption);
-  }
+    if (lastOption) agentFilter.appendChild(lastOption.cloneNode(true));
+  });
   
   // Assign agent dropdown
   const assignAgentSelect = document.getElementById('assignAgentSelect');
