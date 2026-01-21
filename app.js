@@ -2137,13 +2137,15 @@ window.closeReportingSection = function() {
   const reportingSection = document.getElementById('reportingSection');
   reportingSection.style.display = 'none';
   
-  // Show main content again
-  const allCards = document.querySelectorAll('.card, .stats-container, .filter-bar, .admin-controls, .agent-header, .bulk-actions');
-  allCards.forEach(el => {
-    if (!el.id.includes('modal')) {
-      el.style.display = '';
-    }
-  });
+  // Re-apply role-based visibility controls
+  showApp();
+  
+  // Show main dashboard content
+  const statsContainer = document.querySelector('.stats-container');
+  if (statsContainer) statsContainer.style.display = 'grid';
+  
+  const filterBar = document.querySelector('.filter-bar');
+  if (filterBar) filterBar.style.display = 'block';
 };
 
 function populateAgentDropdown() {
