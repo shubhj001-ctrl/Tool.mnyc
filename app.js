@@ -1793,15 +1793,25 @@ window.createNewUser = async function(event) {
 };
 
 window.deleteUser = async function(userId) {
-  if (!confirm(`Are you sure you want to delete user "${userId}"? This action cannot be undone.`)) {
+  const user = allUsers.find(u => u.odoo_id === userId);
+  const userName = user ? user.name : userId;
+  
+  if (!confirm(`Are you sure you want to delete "${userName}"? This action cannot be undone.`)) {
     return;
   }
   
   try {
     await apiCall(`/api/users/${userId}`, 'DELETE');
-    showToast("User deleted successfully!");
+    showToast(`User "${userName}" deleted successfully!`);
+    
+    // Reload users and update everything in real-time
     await loadUsers();
     renderUserList();
+    
+    // Update portal (employee cards, dropdowns)
+    renderEmployeeCards();
+    populateAgentDropdowns();
+    updateEmployeeStats();
   } catch (error) {
     showToast(error.message, "error");
   }
