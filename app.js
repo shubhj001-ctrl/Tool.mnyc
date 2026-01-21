@@ -1,6 +1,34 @@
 // ==================== API BASE URL ====================
 const API_BASE = window.location.origin;
 
+// ==================== THEME MANAGEMENT ====================
+function initTheme() {
+  const savedTheme = localStorage.getItem('mnyc_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon(savedTheme);
+}
+
+function updateThemeIcon(theme) {
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+}
+
+window.toggleTheme = function() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('mnyc_theme', newTheme);
+  updateThemeIcon(newTheme);
+  
+  showToast(`${newTheme === 'dark' ? '🌙 Dark' : '☀️ Light'} mode activated`);
+};
+
+// Initialize theme immediately (before DOM loads)
+initTheme();
+
 // ==================== USER & AUTH SYSTEM ====================
 const employeeMap = {
   "EMP001": { name: "Shubham", avatar: "S", color: "#3b82f6" },

@@ -20,11 +20,201 @@
   --radius-sm: 8px;
 }
 
-* {
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --secondary: #94a3b8;
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --bg: #0f172a;
+  --card: #1e293b;
+  --border: #334155;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --yellow: #422006;
+  --orange: #431407;
+  --red: #450a0a;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode specific overrides */
+[data-theme="dark"] .header {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+}
+
+[data-theme="dark"] .login-screen {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1e40af 100%);
+}
+
+[data-theme="dark"] .loading-screen {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .loading-text {
+  color: var(--text);
+}
+
+[data-theme="dark"] tbody tr:hover {
+  background: #334155;
+}
+
+[data-theme="dark"] .filter-btn {
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .filter-btn:hover {
+  background: var(--border);
+}
+
+[data-theme="dark"] .filter-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .modal {
+  background: var(--card);
+}
+
+[data-theme="dark"] .modal-header {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .btn-outline {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .btn-outline:hover {
+  background: var(--border);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--secondary);
+}
+
+[data-theme="dark"] .queue-tab {
+  background: var(--card);
+  color: var(--text);
+}
+
+[data-theme="dark"] .queue-tab:hover,
+[data-theme="dark"] .queue-tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+[data-theme="dark"] .stat-card {
+  background: var(--card);
+}
+
+[data-theme="dark"] .employee-card {
+  background: var(--card);
+}
+
+[data-theme="dark"] .carousel-arrow {
+  background: var(--card);
+  color: var(--text);
+}
+
+[data-theme="dark"] .carousel-arrow:hover {
+  background: var(--primary);
+  color: white;
+}
+
+[data-theme="dark"] .pagination-btn,
+[data-theme="dark"] .pagination-page {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .pagination-btn:hover:not(:disabled),
+[data-theme="dark"] .pagination-page:hover {
+  background: var(--primary);
+  color: white;
+}
+
+[data-theme="dark"] .action-dropdown-menu {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .action-dropdown-menu button:hover {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .action-dropdown-menu button.danger:hover {
+  background: #450a0a;
+}
+
+[data-theme="dark"] .toast {
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="dark"] .claim-link {
+  color: var(--primary);
+}
+
+[data-theme="dark"] .history-item {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .user-list-item {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .user-list-item:hover {
+  background: var(--border);
+}
+
+/* Smooth theme transition */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   font-family: 'Segoe UI', system-ui, sans-serif;
   margin: 0;
   padding: 0;
+}
+
+body,
+.card,
+.modal,
+.employee-card,
+.stat-card,
+input,
+select,
+textarea,
+.filter-btn,
+.queue-tab,
+.pagination-btn,
+.pagination-page,
+.action-dropdown-menu,
+.history-item,
+.user-list-item,
+.carousel-arrow,
+th,
+td,
+.header {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 body {
@@ -321,6 +511,37 @@ body {
   font-weight: 700;
   font-size: 1.2rem;
   border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(15deg);
+}
+
+.theme-toggle i {
+  transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+[data-theme="dark"] .theme-toggle i {
+  transform: rotate(360deg);
 }
 
 /* ==================== ADMIN CONTROLS ==================== */
