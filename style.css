@@ -1397,21 +1397,24 @@ td {
   white-space: nowrap;
 }
 
-/* Column widths */
-th:nth-child(1), td:nth-child(1) { width: 8%; } /* Claim # */
-th:nth-child(2), td:nth-child(2) { width: 12%; } /* Patient */
-th:nth-child(3), td:nth-child(3) { width: 8%; } /* Balance */
-th:nth-child(4), td:nth-child(4) { width: 7%; } /* Priority */
-th:nth-child(5), td:nth-child(5) { width: 10%; } /* Assigned To */
-th:nth-child(6), td:nth-child(6) { width: 9%; } /* Status */
-th:nth-child(7), td:nth-child(7) { width: 12%; } /* Date Worked */
-th:nth-child(8), td:nth-child(8) { width: 10%; } /* Next Follow-Up */
-th:nth-child(9), td:nth-child(9) { width: 7%; } /* History */
+/* Column widths for admin view (13 columns) */
+.checkbox-col { width: 3%; }
+th:nth-child(2), td:nth-child(2) { width: 6%; } /* Claim # */
+th:nth-child(3), td:nth-child(3) { width: 10%; } /* Patient */
+th:nth-child(4), td:nth-child(4) { width: 6%; } /* Balance */
+th:nth-child(5), td:nth-child(5) { width: 7%; } /* Priority */
+th:nth-child(6), td:nth-child(6) { width: 4%; } /* Age */
+th:nth-child(7), td:nth-child(7) { width: 6%; } /* Age Bucket */
+th:nth-child(8), td:nth-child(8) { width: 9%; } /* Assigned To */
+th:nth-child(9), td:nth-child(9) { width: 8%; } /* Status */
+th:nth-child(10), td:nth-child(10) { width: 11%; } /* Date Worked */
+th:nth-child(11), td:nth-child(11) { width: 10%; } /* Next Follow-Up */
+th:nth-child(12), td:nth-child(12) { width: 5%; } /* History */
 
 /* Actions column */
 th:last-child,
 td:last-child {
-  width: 10%;
+  width: 8%;
   text-align: right;
   white-space: nowrap;
   overflow: visible;
