@@ -248,14 +248,14 @@ function showApp() {
   // Show/hide admin controls
   const adminControls = document.getElementById("adminControls");
   const agentHeader = document.getElementById("agentHeader");
-  const agentFilter = document.getElementById("agentFilter");
+  const claimsAgentFilter = document.getElementById("claimsAgentFilter");
   const checkboxHeader = document.getElementById("checkboxHeader");
   const adminOnlyCols = document.querySelectorAll(".admin-only-col");
   
   if (currentUser.role === "admin") {
     adminControls.style.display = "block";
     agentHeader.style.display = "none";
-    agentFilter.style.display = "block";
+    claimsAgentFilter.style.display = "block";
     document.getElementById("totalLabel").textContent = "All Claims";
     // Show checkbox column for bulk selection
     if (checkboxHeader) checkboxHeader.style.display = "table-cell";
@@ -266,7 +266,7 @@ function showApp() {
   } else {
     adminControls.style.display = "none";
     agentHeader.style.display = "flex";
-    agentFilter.style.display = "none";
+    claimsAgentFilter.style.display = "none";
     document.getElementById("totalLabel").textContent = "My Claims";
     // Hide checkbox column for agents
     if (checkboxHeader) checkboxHeader.style.display = "none";
@@ -663,10 +663,9 @@ function getFilteredClaims() {
   
   // Get agent filter from the visible dropdown in the header
   let agentFilter = "all";
-  const agentFilterSelect = document.querySelectorAll('#agentFilter');
-  if (agentFilterSelect.length > 0) {
-    // Use the visible one (in the header)
-    agentFilter = agentFilterSelect[agentFilterSelect.length - 1].value || "all";
+  const claimsAgentFilter = document.getElementById("claimsAgentFilter");
+  if (claimsAgentFilter) {
+    agentFilter = claimsAgentFilter.value || "all";
   }
   
   const agentQueueFilter = document.getElementById("agentQueueFilter")?.value || "all";
@@ -2108,12 +2107,10 @@ window.openAgentReporting = function() {
 window.openMyReporting = function() {
   const reportingSection = document.getElementById('reportingSection');
   const agentSection = document.getElementById('agentReportingSection');
-  const adminSection = document.getElementById('adminReportingSection');
   const title = document.getElementById('reportingSectionTitle');
   
   title.textContent = 'My Report';
   agentSection.style.display = 'block';
-  adminSection.style.display = 'none';
   
   // Hide main content
   const allCards = document.querySelectorAll('.card, .stats-container, .filter-bar, .agent-header, .bulk-actions');
