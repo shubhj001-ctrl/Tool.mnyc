@@ -1672,7 +1672,10 @@ window.refreshData = function() {
 };
 
 // ==================== USER MANAGEMENT FUNCTIONS (ADMIN) ====================
+let userWasCreated = false; // Track if a user was created during this modal session
+
 window.openCreateUserModal = function() {
+  userWasCreated = false;
   document.getElementById("createUserModal").style.display = "flex";
   document.getElementById("createUserForm").style.display = "block";
   document.getElementById("userCreatedSuccess").style.display = "none";
@@ -1683,11 +1686,31 @@ window.closeCreateUserModal = function() {
   document.getElementById("createUserModal").style.display = "none";
 };
 
+window.closeCreateUserModalAndRefresh = function() {
+  document.getElementById("createUserModal").style.display = "none";
+  if (userWasCreated) {
+    refreshPortalAfterUserChange();
+  }
+};
+
+window.finishCreateUser = function() {
+  document.getElementById("createUserModal").style.display = "none";
+  refreshPortalAfterUserChange();
+};
+
 window.resetCreateUserForm = function() {
   document.getElementById("createUserForm").style.display = "block";
   document.getElementById("userCreatedSuccess").style.display = "none";
   document.getElementById("createUserForm").reset();
 };
+
+function refreshPortalAfterUserChange() {
+  // Refresh employee cards, dropdowns, and stats
+  renderEmployeeCards();
+  populateAgentDropdowns();
+  updateEmployeeStats();
+  showToast("Portal updated with new user!");
+}
 
 window.openManageUsersModal = function() {
   document.getElementById("manageUsersModal").style.display = "flex";
@@ -1750,6 +1773,9 @@ window.createNewUser = async function(event) {
   try {
     await apiCall('/api/users', 'POST', { username, name, email, password });
     
+    // Mark that a user was created
+    userWasCreated = true;
+    
     // Show success message in modal
     document.getElementById("createUserForm").style.display = "none";
     document.getElementById("userCreatedSuccess").style.display = "block";
@@ -1757,6 +1783,10 @@ window.createNewUser = async function(event) {
     
     showToast(`User "${name}" created successfully!`);
     await loadUsers();
+    
+    // Auto-update the portal in background
+    renderEmployeeCards();
+    populateAgentDropdowns();
   } catch (error) {
     showToast(error.message, "error");
   }
