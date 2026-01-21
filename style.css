@@ -1931,7 +1931,9 @@ tbody tr:last-child td {
 }
 
 .modal-large {
-  max-width: 700px;
+  max-width: 90vw;
+  width: 90vw;
+  max-height: 85vh;
 }
 
 /* Claim Detail Modal Styles */
@@ -2955,31 +2957,24 @@ tr.selected:hover {
 .card-table-wrapper {
   width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
   margin: 20px 0;
+  max-height: 60vh;
 }
 
 .card-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  table-layout: auto;
 }
 
-.card-table thead {
-  background: var(--bg);
-  border-bottom: 2px solid var(--border);
-}
-
-.card-table th {
-  padding: 12px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--text);
-}
-
+.card-table th,
 .card-table td {
+  white-space: nowrap;
   padding: 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-table tbody tr:hover {
