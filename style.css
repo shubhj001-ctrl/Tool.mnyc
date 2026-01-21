@@ -620,6 +620,7 @@ body {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .admin-controls .btn-outline {
@@ -631,6 +632,65 @@ body {
 .admin-controls .btn-outline:hover {
   background: var(--primary);
   color: white;
+}
+
+/* Dropdown Styles */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-toggle {
+  background: var(--card);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  cursor: pointer;
+}
+
+.dropdown-toggle:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-width: 200px;
+  box-shadow: var(--shadow);
+  margin-top: 8px;
+  display: none;
+  z-index: 1000;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--bg);
+  color: var(--primary);
+}
+
+.dropdown-item i {
+  min-width: 16px;
 }
 
 /* Employee Overview Carousel */
@@ -1180,37 +1240,38 @@ tr.claim-paid td {
 /* ==================== STATS DASHBOARD ==================== */
 .stats-container {
   max-width: 1400px;
-  margin: 20px auto;
-  padding: 0 30px;
+  margin: 12px auto;
+  padding: 0 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
 }
 
 .stat-card {
   background: var(--card);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .stat-icon-blue {
@@ -1236,18 +1297,22 @@ tr.claim-paid td {
 .stat-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .stat-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Clickable stat cards */
