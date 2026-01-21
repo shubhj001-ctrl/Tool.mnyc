@@ -317,6 +317,188 @@ app.post('/api/claims/bulk', async (req, res) => {
   }
 });
 
+// ==================== REPORTING ROUTES ====================
+
+// Get agent daily report (claims worked today)
+app.get('/api/reports/agent/daily/:userId', async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const claims = await Claim.find({
+      assignedTo: req.params.userId,
+      dateWorked: { $gte: today, $lt: tomorrow }
+    }).sort({ dateWorked: -1 });
+    
+    res.json({
+      date: today.toISOString().split('T')[0],
+      userId: req.params.userId,
+      totalClaims: claims.length,
+      claims
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get agent report with date range
+app.get('/api/reports/agent/:userId', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const query = { assignedTo: req.params.userId };
+    
+    if (startDate || endDate) {
+      query.dateWorked = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        query.dateWorked.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.dateWorked.$lte = end;
+      }
+    }
+    
+    const claims = await Claim.find(query).sort({ dateWorked: -1 });
+    
+    res.json({
+      userId: req.params.userId,
+      period: { startDate, endDate },
+      totalClaims: claims.length,
+      claims
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get admin report - all claims worked by an agent in date range
+app.get('/api/reports/admin/agent/:userId', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const query = { assignedTo: req.params.userId };
+    
+    if (startDate || endDate) {
+      query.dateWorked = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        query.dateWorked.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.dateWorked.$lte = end;
+      }
+    }
+    
+    const claims = await Claim.find(query).sort({ dateWorked: -1 });
+    const agent = await User.findOne({ odoo_id: req.params.userId }).select('-password');
+    
+    res.json({
+      agent: agent ? { name: agent.name, odoo_id: agent.odoo_id } : null,
+      period: { startDate, endDate },
+      totalClaims: claims.length,
+      claims
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get admin report - filtered claims
+app.get('/api/reports/admin/claims', async (req, res) => {
+  try {
+    const { filterType, startDate, endDate } = req.query;
+    const query = {};
+    
+    // Filter by type
+    if (filterType === 'all') {
+      // All claims in portal
+      query.claimNo = { $exists: true };
+    } else if (filterType === 'pending') {
+      // Claims not worked by any agent (no dateWorked)
+      query.dateWorked = null;
+      query.status = { $ne: 'paid' };
+    } else if (filterType === 'paid') {
+      // Claims with paid status
+      query.status = 'paid';
+    } else if (filterType === 'overdue') {
+      // Claims where nextFollowUp date has passed
+      const today = new Date();
+      query.nextFollowUp = { $lt: today };
+      query.status = { $ne: 'paid' };
+    }
+    
+    // Apply date filter if provided
+    if (startDate || endDate) {
+      if (!query.dateWorked) query.dateWorked = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        query.dateWorked.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.dateWorked.$lte = end;
+      }
+    }
+    
+    const claims = await Claim.find(query).sort({ dateWorked: -1 });
+    
+    res.json({
+      filterType,
+      period: { startDate, endDate },
+      totalClaims: claims.length,
+      claims
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get admin stats
+app.get('/api/reports/admin/stats', async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // All claims in portal
+    const allClaims = await Claim.countDocuments({ claimNo: { $exists: true } });
+    
+    // Pending: not worked and not paid
+    const pendingClaims = await Claim.countDocuments({
+      dateWorked: null,
+      status: { $ne: 'paid' }
+    });
+    
+    // Paid claims
+    const paidClaims = await Claim.countDocuments({ status: 'paid' });
+    
+    // Overdue: nextFollowUp date has passed and not paid
+    const overdueClaims = await Claim.countDocuments({
+      nextFollowUp: { $lt: today },
+      status: { $ne: 'paid' }
+    });
+    
+    res.json({
+      all: allClaims,
+      pending: pendingClaims,
+      paid: paidClaims,
+      overdue: overdueClaims
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ==================== SEED DATA ====================
 
 async function seedDatabase() {

@@ -387,18 +387,48 @@ function updateStats() {
     relevantClaims = claims.filter(c => c.assignedTo === currentUser.id);
   }
   
-  const total = relevantClaims.length;
-  const pending = relevantClaims.filter(c => c.status === "INPRCS" || !c.status).length;
-  const paid = relevantClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
-  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const overdue = relevantClaims.filter(c => {
-    if (!c.nextFollowUp) return false;
-    const next = new Date(c.nextFollowUp);
-    next.setHours(0, 0, 0, 0);
-    return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
-  }).length;
+  
+  let total, pending, paid, overdue;
+  
+  if (currentUser && currentUser.role === "admin") {
+    // ADMIN CARD DEFINITIONS:
+    // "All Claims" = all claims in portal
+    total = claims.length;
+    
+    // "Pending" = claims not worked (dateWorked is null) and not paid
+    pending = claims.filter(c => c.dateWorked === null && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV").length;
+    
+    // "Paid" = claims with paid status
+    paid = claims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
+    
+    // "Overdue" = claims where nextFollowUp date has passed and not paid
+    overdue = claims.filter(c => {
+      if (!c.nextFollowUp) return false;
+      const next = new Date(c.nextFollowUp);
+      next.setHours(0, 0, 0, 0);
+      return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
+    }).length;
+  } else {
+    // AGENT CARD DEFINITIONS:
+    // "My Claims" = all assigned to agent
+    total = relevantClaims.length;
+    
+    // "Pending" = claims in pending status (no dateWorked)
+    pending = relevantClaims.filter(c => !c.dateWorked && c.status !== "PAID").length;
+    
+    // "Paid" = claims with paid status
+    paid = relevantClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
+    
+    // "Overdue" = claims where nextFollowUp date has passed
+    overdue = relevantClaims.filter(c => {
+      if (!c.nextFollowUp) return false;
+      const next = new Date(c.nextFollowUp);
+      next.setHours(0, 0, 0, 0);
+      return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
+    }).length;
+  }
 
   document.getElementById("totalClaims").textContent = total;
   document.getElementById("pendingClaims").textContent = pending;
@@ -1936,6 +1966,221 @@ window.saveProfile = async function(event) {
     }
   } catch (error) {
     showToast(error.message, "error");
+  }
+};
+
+// ==================== REPORTING FUNCTIONS ====================
+let currentReportType = 'all';
+let currentReportData = [];
+
+window.openReportingModal = async function(reportType) {
+  if (currentUser.role === 'admin') {
+    // Admin can view all report types
+    currentReportType = reportType;
+  } else {
+    // Agent can only see today's or custom date range for themselves
+    currentReportType = 'agent';
+  }
+  
+  const modal = document.getElementById('reportingModal');
+  const reportTitle = document.getElementById('reportTitle');
+  const agentFilterItem = document.getElementById('agentFilterItem');
+  
+  // Set report title
+  if (currentUser.role === 'admin') {
+    if (reportType === 'all') reportTitle.textContent = 'All Claims Report';
+    else if (reportType === 'pending') reportTitle.textContent = 'Pending Claims Report';
+    else if (reportType === 'paid') reportTitle.textContent = 'Paid Claims Report';
+    else if (reportType === 'overdue') reportTitle.textContent = 'Overdue Claims Report';
+  } else {
+    reportTitle.textContent = 'My Daily Report';
+  }
+  
+  // Show agent filter only for admin
+  agentFilterItem.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+  
+  // Populate agent dropdown if admin
+  if (currentUser.role === 'admin') {
+    populateReportAgentFilter();
+  }
+  
+  // Set default dates to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('reportStartDate').value = today;
+  document.getElementById('reportEndDate').value = today;
+  
+  // Clear previous report
+  document.getElementById('reportTableWrapper').style.display = 'none';
+  document.getElementById('reportStatsSection').style.display = 'none';
+  document.getElementById('emptyReport').style.display = 'none';
+  
+  modal.style.display = 'flex';
+  modal.classList.add('modal-open');
+};
+
+window.closeReportingModal = function() {
+  const modal = document.getElementById('reportingModal');
+  modal.classList.remove('modal-open');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 200);
+};
+
+function populateReportAgentFilter() {
+  const select = document.getElementById('reportAgentFilter');
+  select.innerHTML = '<option value="">-- All Agents --</option>';
+  
+  allUsers.forEach((user, index) => {
+    const empId = `EMP00${index + 1}`;
+    const option = document.createElement('option');
+    option.value = user.odoo_id;
+    option.textContent = user.name;
+    select.appendChild(option);
+  });
+}
+
+window.generateReport = async function() {
+  try {
+    const startDate = document.getElementById('reportStartDate').value;
+    const endDate = document.getElementById('reportEndDate').value;
+    const selectedAgent = document.getElementById('reportAgentFilter').value;
+    
+    if (!startDate || !endDate) {
+      showToast('Please select both start and end dates', 'error');
+      return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+      showToast('Start date must be before end date', 'error');
+      return;
+    }
+    
+    let reportData = [];
+    
+    if (currentUser.role === 'admin') {
+      // Admin reports
+      if (currentReportType !== 'agent') {
+        // Claims-based report
+        const params = new URLSearchParams({
+          filterType: currentReportType,
+          startDate,
+          endDate
+        });
+        reportData = await apiCall(`/api/reports/admin/claims?${params}`);
+        reportData = reportData.claims || [];
+      } else {
+        // Agent-based report
+        const userId = selectedAgent || '';
+        if (!userId) {
+          showToast('Please select an agent', 'error');
+          return;
+        }
+        const params = new URLSearchParams({ startDate, endDate });
+        reportData = await apiCall(`/api/reports/admin/agent/${userId}?${params}`);
+        reportData = reportData.claims || [];
+      }
+    } else {
+      // Agent reports (only for themselves)
+      const params = new URLSearchParams({ startDate, endDate });
+      const result = await apiCall(`/api/reports/agent/${currentUser.odoo_id}?${params}`);
+      reportData = result.claims || [];
+    }
+    
+    currentReportData = reportData;
+    displayReportData(reportData, startDate, endDate);
+    
+  } catch (error) {
+    showToast('Failed to generate report: ' + error.message, 'error');
+  }
+};
+
+function displayReportData(data, startDate, endDate) {
+  const tableWrapper = document.getElementById('reportTableWrapper');
+  const statsSection = document.getElementById('reportStatsSection');
+  const emptyReport = document.getElementById('emptyReport');
+  const tableBody = document.getElementById('reportTableBody');
+  
+  if (data.length === 0) {
+    tableWrapper.style.display = 'none';
+    statsSection.style.display = 'none';
+    emptyReport.style.display = 'flex';
+    return;
+  }
+  
+  // Calculate stats
+  const totalBalance = data.reduce((sum, claim) => sum + (claim.balance || 0), 0);
+  
+  // Display stats
+  document.getElementById('reportTotalClaims').textContent = data.length;
+  document.getElementById('reportTotalBalance').textContent = '$' + totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  statsSection.style.display = 'flex';
+  
+  // Populate table
+  tableBody.innerHTML = '';
+  data.forEach(claim => {
+    const row = document.createElement('tr');
+    const dateWorked = claim.dateWorked ? new Date(claim.dateWorked).toLocaleDateString() : '-';
+    const nextFollowUp = claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-';
+    const assignedTo = claim.assignedTo || 'Unassigned';
+    const status = claim.status || '-';
+    
+    row.innerHTML = `
+      <td><strong>${claim.claimNo}</strong></td>
+      <td>${claim.patient}</td>
+      <td>$${(claim.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+      <td>${assignedTo}</td>
+      <td>${dateWorked}</td>
+      <td>${nextFollowUp}</td>
+    `;
+    tableBody.appendChild(row);
+  });
+  
+  tableWrapper.style.display = 'block';
+  emptyReport.style.display = 'none';
+}
+
+window.exportReportData = function() {
+  if (currentReportData.length === 0) {
+    showToast('No data to export', 'error');
+    return;
+  }
+  
+  try {
+    // Prepare CSV data
+    const headers = ['Claim #', 'Patient', 'Balance', 'Status', 'Assigned To', 'Date Worked', 'Next Follow-Up'];
+    const rows = currentReportData.map(claim => [
+      claim.claimNo,
+      claim.patient,
+      claim.balance || 0,
+      claim.status || '-',
+      claim.assignedTo || 'Unassigned',
+      claim.dateWorked ? new Date(claim.dateWorked).toLocaleDateString() : '-',
+      claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-'
+    ]);
+    
+    // Create CSV content
+    let csv = headers.join(',') + '\n';
+    rows.forEach(row => {
+      csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+    });
+    
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Report_${new Date().toLocaleDateString()}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('Report exported successfully!');
+  } catch (error) {
+    showToast('Failed to export report: ' + error.message, 'error');
   }
 };
 
