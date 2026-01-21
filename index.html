@@ -857,17 +857,44 @@
       <div class="reporting-filters">
         <div class="filter-group">
           <label><i class="fas fa-user-tie"></i> Select Agent</label>
-          <select id="reportingAgentSelect" onchange="generateReportingData()">
+          <select id="reportingAgentSelect">
             <option value="">-- Select Agent --</option>
           </select>
         </div>
         <div class="filter-group">
           <label><i class="fas fa-calendar-alt"></i> Start Date</label>
-          <input type="date" id="reportingStartDate" onchange="generateReportingData()" />
+          <input type="date" id="reportingStartDate" />
         </div>
         <div class="filter-group">
           <label><i class="fas fa-calendar-alt"></i> End Date</label>
-          <input type="date" id="reportingEndDate" onchange="generateReportingData()" />
+          <input type="date" id="reportingEndDate" />
+        </div>
+        <div class="filter-group filter-actions">
+          <button class="btn btn-primary" onclick="generateReportingData()">
+            <i class="fas fa-play"></i> Generate Report
+          </button>
+          <button class="btn btn-secondary" onclick="clearReportingFilters()">
+            <i class="fas fa-times"></i> Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filtering Stats -->
+      <div class="advanced-filtering" id="advancedFiltersAdmin" style="display: none;">
+        <h3><i class="fas fa-chart-pie"></i> Quick Stats</h3>
+        <div class="quick-stats-grid">
+          <div class="quick-stat-box">
+            <span class="quick-stat-label">Closed Today</span>
+            <span class="quick-stat-number" id="closedTodayCount">0</span>
+          </div>
+          <div class="quick-stat-box">
+            <span class="quick-stat-label">No Date Worked</span>
+            <span class="quick-stat-number" id="noDtWorkedCount">0</span>
+          </div>
+          <div class="quick-stat-box">
+            <span class="quick-stat-label">Pending Claims</span>
+            <span class="quick-stat-number" id="pendingClaimsCount">0</span>
+          </div>
         </div>
       </div>
     </div>
@@ -877,11 +904,38 @@
       <div class="reporting-filters">
         <div class="filter-group">
           <label><i class="fas fa-calendar-alt"></i> Start Date</label>
-          <input type="date" id="myReportingStartDate" onchange="generateMyReportingData()" />
+          <input type="date" id="myReportingStartDate" />
         </div>
         <div class="filter-group">
           <label><i class="fas fa-calendar-alt"></i> End Date</label>
-          <input type="date" id="myReportingEndDate" onchange="generateMyReportingData()" />
+          <input type="date" id="myReportingEndDate" />
+        </div>
+        <div class="filter-group filter-actions">
+          <button class="btn btn-primary" onclick="generateMyReportingData()">
+            <i class="fas fa-play"></i> Generate Report
+          </button>
+          <button class="btn btn-secondary" onclick="clearMyReportingFilters()">
+            <i class="fas fa-times"></i> Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filtering Stats -->
+      <div class="advanced-filtering" id="advancedFiltersAgent" style="display: none;">
+        <h3><i class="fas fa-chart-pie"></i> Quick Stats</h3>
+        <div class="quick-stats-grid">
+          <div class="quick-stat-box">
+            <span class="quick-stat-label">Closed Today</span>
+            <span class="quick-stat-number" id="myClosedTodayCount">0</span>
+          </div>
+          <div class="quick-stat-box">
+            <span class="quick-stat-label">No Date Worked</span>
+            <span class="quick-stat-number" id="myNoDtWorkedCount">0</span>
+          </div>
+          <div class="quick-stat-box">
+            <span class="quick-stat-label">Pending Claims</span>
+            <span class="quick-stat-number" id="myPendingClaimsCount">0</span>
+          </div>
         </div>
       </div>
     </div>
@@ -903,21 +957,6 @@
       <div class="stat-box">
         <span class="stat-label">Total Balance</span>
         <span class="stat-number" id="reportingTotalBalance">$0</span>
-      </div>
-    </div>
-
-    <!-- Advanced Filtering -->
-    <div class="advanced-filtering">
-      <h3><i class="fas fa-filter"></i> Advanced Filtering</h3>
-      <div class="filter-options">
-        <label class="filter-checkbox">
-          <input type="checkbox" id="showClosedOnly" onchange="generateReportingData(); generateMyReportingData();" />
-          Show Closed Claims Only
-        </label>
-        <label class="filter-checkbox">
-          <input type="checkbox" id="showOpenOnly" onchange="generateReportingData(); generateMyReportingData();" />
-          Show Open Claims Only
-        </label>
       </div>
     </div>
 

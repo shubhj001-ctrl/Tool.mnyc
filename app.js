@@ -2175,27 +2175,28 @@ window.generateReportingData = function() {
     return;
   }
   
-  const showClosedOnly = document.getElementById('showClosedOnly').checked;
-  const showOpenOnly = document.getElementById('showOpenOnly').checked;
-  
-  // Filter claims for the selected agent within date range
+  // Filter claims for the selected agent where dateWorked equals the selected date(s)
   const startDateObj = new Date(startDate);
   const endDateObj = new Date(endDate);
   endDateObj.setHours(23, 59, 59, 999);
   
   let reportClaims = claims.filter(c => {
+    if (c.assignedTo !== selectedAgent) return false;
     if (!c.dateWorked) return false;
     const worked = new Date(c.dateWorked);
-    if (worked < startDateObj || worked > endDateObj) return false;
-    if (c.assignedTo !== selectedAgent) return false;
-    
-    // Apply advanced filtering
-    const isClosed = c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV";
-    if (showClosedOnly && !isClosed) return false;
-    if (showOpenOnly && isClosed) return false;
-    
-    return true;
+    return worked >= startDateObj && worked <= endDateObj;
   });
+  
+  // Calculate quick stats for advanced filtering
+  const closedToday = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
+  const noDtWorked = claims.filter(c => c.assignedTo === selectedAgent && !c.dateWorked).length;
+  const pendingClaims = claims.filter(c => c.assignedTo === selectedAgent && c.status === "PENDING").length;
+  
+  // Display quick stats
+  document.getElementById('closedTodayCount').textContent = closedToday;
+  document.getElementById('noDtWorkedCount').textContent = noDtWorked;
+  document.getElementById('pendingClaimsCount').textContent = pendingClaims;
+  document.getElementById('advancedFiltersAdmin').style.display = 'block';
   
   displayReportingData(reportClaims);
 };
@@ -2214,29 +2215,59 @@ window.generateMyReportingData = function() {
     return;
   }
   
-  const showClosedOnly = document.getElementById('showClosedOnly').checked;
-  const showOpenOnly = document.getElementById('showOpenOnly').checked;
-  
-  // Filter claims for current user within date range
+  // Filter claims for current user where dateWorked equals the selected date(s)
   const startDateObj = new Date(startDate);
   const endDateObj = new Date(endDate);
   endDateObj.setHours(23, 59, 59, 999);
   
   let reportClaims = claims.filter(c => {
+    if (c.assignedTo !== currentUser.id) return false;
     if (!c.dateWorked) return false;
     const worked = new Date(c.dateWorked);
-    if (worked < startDateObj || worked > endDateObj) return false;
-    if (c.assignedTo !== currentUser.id) return false;
-    
-    // Apply advanced filtering
-    const isClosed = c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV";
-    if (showClosedOnly && !isClosed) return false;
-    if (showOpenOnly && isClosed) return false;
-    
-    return true;
+    return worked >= startDateObj && worked <= endDateObj;
   });
   
+  // Calculate quick stats for advanced filtering
+  const closedToday = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
+  const noDtWorked = claims.filter(c => c.assignedTo === currentUser.id && !c.dateWorked).length;
+  const pendingClaims = claims.filter(c => c.assignedTo === currentUser.id && c.status === "PENDING").length;
+  
+  // Display quick stats
+  document.getElementById('myClosedTodayCount').textContent = closedToday;
+  document.getElementById('myNoDtWorkedCount').textContent = noDtWorked;
+  document.getElementById('myPendingClaimsCount').textContent = pendingClaims;
+  document.getElementById('advancedFiltersAgent').style.display = 'block';
+  
   displayReportingData(reportClaims);
+};
+
+window.clearReportingFilters = function() {
+  // Clear admin section filters
+  document.getElementById('reportingAgentSelect').value = '';
+  document.getElementById('reportingStartDate').value = '';
+  document.getElementById('reportingEndDate').value = '';
+  
+  // Hide stats and advanced filtering
+  document.getElementById('reportingStats').style.display = 'none';
+  document.getElementById('reportingTableWrapper').style.display = 'none';
+  document.getElementById('emptyReportingState').style.display = 'none';
+  document.getElementById('advancedFiltersAdmin').style.display = 'none';
+  
+  showToast('Filters cleared', 'success');
+};
+
+window.clearMyReportingFilters = function() {
+  // Clear agent section filters
+  document.getElementById('myReportingStartDate').value = '';
+  document.getElementById('myReportingEndDate').value = '';
+  
+  // Hide stats and advanced filtering
+  document.getElementById('reportingStats').style.display = 'none';
+  document.getElementById('reportingTableWrapper').style.display = 'none';
+  document.getElementById('emptyReportingState').style.display = 'none';
+  document.getElementById('advancedFiltersAgent').style.display = 'none';
+  
+  showToast('Filters cleared', 'success');
 };
 
 function displayReportingData(data) {
