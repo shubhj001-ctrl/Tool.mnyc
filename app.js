@@ -735,19 +735,12 @@ function render() {
       </td>
     ` : '';
     
-    // Admin-only columns for Age and Age Bucket
-    const adminOnlyCols = currentUser.role === "admin" ? `
-      <td class="admin-only-col">${c.age || '-'}</td>
-      <td class="admin-only-col">${c.ageBucket || '-'}</td>
-    ` : '';
-    
     tr.innerHTML = `
       ${checkboxCell}
       <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;"><strong>${c.claimNo}</strong></a></td>
       <td><a href="#" class="claim-link" onclick="openDetailModal('${claimId}'); return false;">${c.patient}</a></td>
       <td><span class="balance-amount ${c.balance > 500 ? 'balance-high' : ''}">${formatCurrency(c.balance)}</span></td>
       <td>${getPriorityBadge(c.priority)}</td>
-      ${adminOnlyCols}
       <td>${getAssignedBadge(c.assignedTo)}${sharedIndicator}</td>
       <td>${getStatusBadge(c.status)}</td>
       <td>${c.dateWorked ? new Date(c.dateWorked).toLocaleString() : "-"}</td>
@@ -1021,6 +1014,14 @@ window.openDetailModal = function(claimId) {
       <div class="detail-item">
         <label>Balance</label>
         <div class="value balance">${formatCurrency(claim.balance)}</div>
+      </div>
+      <div class="detail-item">
+        <label>Age (Days)</label>
+        <div class="value">${claim.age || '-'}</div>
+      </div>
+      <div class="detail-item">
+        <label>Age Bucket</label>
+        <div class="value">${claim.ageBucket || '-'}</div>
       </div>
       <div class="detail-item">
         <label>Status</label>
