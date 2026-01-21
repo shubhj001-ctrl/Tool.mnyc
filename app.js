@@ -2134,18 +2134,8 @@ window.openMyReporting = function() {
 };
 
 window.closeReportingSection = function() {
-  const reportingSection = document.getElementById('reportingSection');
-  reportingSection.style.display = 'none';
-  
-  // Re-apply role-based visibility controls
-  showApp();
-  
-  // Show main dashboard content
-  const statsContainer = document.querySelector('.stats-container');
-  if (statsContainer) statsContainer.style.display = 'grid';
-  
-  const filterBar = document.querySelector('.filter-bar');
-  if (filterBar) filterBar.style.display = 'block';
+  // Refresh the page to properly reload the portal
+  window.location.reload();
 };
 
 function populateAgentDropdown() {
