@@ -2148,7 +2148,7 @@ function populateAgentDropdown() {
   
   allUsers.forEach((user) => {
     const option = document.createElement('option');
-    option.value = user.odoo_id;
+    option.value = user.id;
     option.textContent = user.name;
     select.appendChild(option);
   });
