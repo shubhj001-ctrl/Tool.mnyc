@@ -267,6 +267,9 @@ function checkSession() {
     currentUser = JSON.parse(savedUser);
     // Load users first for proper mapping
     loadUsers().then(() => showApp());
+  } else {
+    // No session - show login screen
+    loginScreen.style.display = "flex";
   }
 }
 
