@@ -852,53 +852,6 @@
   </div>
 
   <div class="reporting-container">
-    <!-- Admin Reports -->
-    <div id="adminReportingSection" style="display: none;">
-      <div class="reporting-filters">
-        <div class="filter-group">
-          <label><i class="fas fa-user-tie"></i> Select Agent</label>
-          <select id="reportingAgentSelect">
-            <option value="">-- Select Agent --</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label><i class="fas fa-calendar-alt"></i> Start Date</label>
-          <input type="date" id="reportingStartDate" />
-        </div>
-        <div class="filter-group">
-          <label><i class="fas fa-calendar-alt"></i> End Date</label>
-          <input type="date" id="reportingEndDate" />
-        </div>
-        <div class="filter-group filter-actions">
-          <button class="btn btn-primary" onclick="generateReportingData()">
-            <i class="fas fa-play"></i> Generate Report
-          </button>
-          <button class="btn btn-secondary" onclick="clearReportingFilters()">
-            <i class="fas fa-times"></i> Clear Filters
-          </button>
-        </div>
-      </div>
-
-      <!-- Advanced Filtering Stats -->
-      <div class="advanced-filtering" id="advancedFiltersAdmin" style="display: none;">
-        <h3><i class="fas fa-chart-pie"></i> Quick Stats</h3>
-        <div class="quick-stats-grid">
-          <div class="quick-stat-box">
-            <span class="quick-stat-label">Total Claims</span>
-            <span class="quick-stat-number" id="totalClaimsCount">0</span>
-          </div>
-          <div class="quick-stat-box">
-            <span class="quick-stat-label">Closed</span>
-            <span class="quick-stat-number" id="closedCountAdmin">0</span>
-          </div>
-          <div class="quick-stat-box">
-            <span class="quick-stat-label">Pending</span>
-            <span class="quick-stat-number" id="pendingCountAdmin">0</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Agent Reports (Personal) -->
     <div id="agentReportingSection" style="display: none;">
       <div class="reporting-filters">

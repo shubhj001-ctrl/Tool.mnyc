@@ -2067,11 +2067,11 @@ function populateCardModal(type) {
 // ==================== REPORTING SECTION FUNCTIONS ====================
 window.openAgentReporting = function() {
   const reportingSection = document.getElementById('reportingSection');
-  const adminSection = document.getElementById('adminReportingSection');
+  const agentSection = document.getElementById('agentReportingSection');
   const title = document.getElementById('reportingSectionTitle');
   
-  title.textContent = 'Agent Reports';
-  adminSection.style.display = 'block';
+  title.textContent = 'My Daily Report';
+  agentSection.style.display = 'block';
   
   // Hide main content
   const mainContent = document.querySelector('.admin-controls ~ *:not(.modal-backdrop)');
@@ -2143,67 +2143,11 @@ window.closeReportingSection = function() {
 };
 
 function populateAgentDropdown() {
-  const select = document.getElementById('reportingAgentSelect');
-  select.innerHTML = '<option value="">-- Select Agent --</option>';
-  
-  allUsers.forEach((user) => {
-    const option = document.createElement('option');
-    option.value = user.odoo_id;
-    option.textContent = user.name;
-    select.appendChild(option);
-  });
+  // Removed - admin reporting section no longer exists
 }
 
 window.generateReportingData = function() {
-  const agentSelect = document.getElementById('reportingAgentSelect');
-  const startDate = document.getElementById('reportingStartDate').value;
-  const endDate = document.getElementById('reportingEndDate').value;
-  const selectedAgent = agentSelect.value;
-  
-  if (!selectedAgent) {
-    showToast('Please select an agent', 'error');
-    return;
-  }
-  
-  if (!startDate || !endDate) {
-    showToast('Please select both start and end dates', 'error');
-    return;
-  }
-  
-  if (new Date(startDate) > new Date(endDate)) {
-    showToast('Start date must be before end date', 'error');
-    return;
-  }
-  
-  // Filter claims for the selected agent in the selected date range
-  const startDateObj = new Date(startDate);
-  const endDateObj = new Date(endDate);
-  endDateObj.setHours(23, 59, 59, 999);
-  
-  // Show only claims assigned to this user AND worked on during the selected date range
-  let reportClaims = claims.filter(c => {
-    if (c.assignedTo !== selectedAgent) return false;
-    if (!c.dateWorked) return false; // Must have a dateWorked
-    const workedDate = new Date(c.dateWorked);
-    return workedDate >= startDateObj && workedDate <= endDateObj;
-  });
-  
-  // Calculate quick stats
-  const totalClaims = reportClaims.length;
-  const closedClaims = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
-  const pendingClaims = reportClaims.filter(c => c.status === "PENDING").length;
-  
-  // Display quick stats
-  document.getElementById('totalClaimsCount').textContent = totalClaims;
-  document.getElementById('closedCountAdmin').textContent = closedClaims;
-  document.getElementById('pendingCountAdmin').textContent = pendingClaims;
-  
-  // Store original data for filtering
-  originalReportData = reportClaims;
-  
-  document.getElementById('advancedFiltersAdmin').style.display = 'block';
-  
-  displayReportingData(reportClaims);
+  // Removed - admin reporting section no longer exists
 };
 
 window.generateMyReportingData = function() {
@@ -2252,18 +2196,7 @@ window.generateMyReportingData = function() {
 };
 
 window.clearReportingFilters = function() {
-  // Clear admin section filters
-  document.getElementById('reportingAgentSelect').value = '';
-  document.getElementById('reportingStartDate').value = '';
-  document.getElementById('reportingEndDate').value = '';
-  
-  // Hide stats and advanced filtering
-  document.getElementById('reportingStats').style.display = 'none';
-  document.getElementById('reportingTableWrapper').style.display = 'none';
-  document.getElementById('emptyReportingState').style.display = 'none';
-  document.getElementById('advancedFiltersAdmin').style.display = 'none';
-  
-  showToast('Filters cleared', 'success');
+  // Removed - admin reporting section no longer exists
 };
 
 window.clearMyReportingFilters = function() {
