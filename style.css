@@ -232,6 +232,13 @@ body {
   min-height: 100vh;
 }
 
+/* App Container */
+.app-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 /* ==================== LOADING SCREEN ==================== */
 .loading-screen {
   position: fixed;
@@ -1309,9 +1316,11 @@ tr.claim-paid td {
 
 /* ==================== CARD & TABLE ==================== */
 .card {
+  width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0 20px 30px;
+  box-sizing: border-box;
 }
 
 .card > .card-header,
@@ -1354,12 +1363,14 @@ tr.claim-paid td {
 
 .table-wrapper {
   border-radius: 0;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 th {
@@ -1383,8 +1394,13 @@ td {
 }
 
 /* Actions column */
+th:last-child,
 td:last-child {
   padding-right: 20px;
+  text-align: right;
+  white-space: nowrap;
+  width: 120px;
+  min-width: 120px;
 }
 
 tbody tr {
