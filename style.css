@@ -185,16 +185,25 @@
   background: var(--border);
 }
 
-/* Smooth theme transition */
+/* Base styles */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  font-family: 'Segoe UI', system-ui, sans-serif;
   margin: 0;
   padding: 0;
 }
 
+/* Default font for non-icon elements */
+body,
+input,
+select,
+textarea,
+button {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Smooth theme transition */
 body,
 .card,
 .modal,
