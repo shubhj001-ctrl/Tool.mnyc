@@ -2262,6 +2262,70 @@ tr.selected:hover {
   gap: 8px;
 }
 
+/* User Created Success */
+.user-created-success {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.user-created-success .success-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--success), #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  animation: scaleIn 0.5s ease;
+}
+
+.user-created-success .success-icon i {
+  font-size: 2.5rem;
+  color: white;
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.user-created-success h4 {
+  font-size: 1.4rem;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.user-created-success p {
+  color: var(--text-muted);
+  margin-bottom: 25px;
+}
+
+/* Manage Users Modal */
+.manage-users-content {
+  padding: 20px;
+}
+
+.user-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+.user-list-header span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
 .user-list-section {
   margin-top: 25px;
   padding-top: 20px;
@@ -2281,7 +2345,7 @@ tr.selected:hover {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 250px;
+  max-height: 400px;
   overflow-y: auto;
 }
 

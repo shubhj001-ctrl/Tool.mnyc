@@ -1672,24 +1672,46 @@ window.refreshData = function() {
 };
 
 // ==================== USER MANAGEMENT FUNCTIONS (ADMIN) ====================
-window.openUserManagementModal = function() {
-  document.getElementById("userManagementModal").style.display = "flex";
+window.openCreateUserModal = function() {
+  document.getElementById("createUserModal").style.display = "flex";
+  document.getElementById("createUserForm").style.display = "block";
+  document.getElementById("userCreatedSuccess").style.display = "none";
   document.getElementById("createUserForm").reset();
+};
+
+window.closeCreateUserModal = function() {
+  document.getElementById("createUserModal").style.display = "none";
+};
+
+window.resetCreateUserForm = function() {
+  document.getElementById("createUserForm").style.display = "block";
+  document.getElementById("userCreatedSuccess").style.display = "none";
+  document.getElementById("createUserForm").reset();
+};
+
+window.openManageUsersModal = function() {
+  document.getElementById("manageUsersModal").style.display = "flex";
   renderUserList();
 };
 
-window.closeUserManagementModal = function() {
-  document.getElementById("userManagementModal").style.display = "none";
+window.closeManageUsersModal = function() {
+  document.getElementById("manageUsersModal").style.display = "none";
 };
 
 function renderUserList() {
   const userList = document.getElementById("userList");
+  const userCount = document.getElementById("userCount");
+  
+  if (userCount) {
+    userCount.textContent = `${allUsers.length} user${allUsers.length !== 1 ? 's' : ''}`;
+  }
   
   if (allUsers.length === 0) {
     userList.innerHTML = `
-      <div style="text-align: center; padding: 20px; color: var(--text-muted);">
-        <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px;"></i>
+      <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+        <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
         <p>No agents found</p>
+        <p style="font-size: 0.85rem;">Create your first user to get started</p>
       </div>
     `;
     return;
@@ -1727,10 +1749,14 @@ window.createNewUser = async function(event) {
   
   try {
     await apiCall('/api/users', 'POST', { username, name, email, password });
+    
+    // Show success message in modal
+    document.getElementById("createUserForm").style.display = "none";
+    document.getElementById("userCreatedSuccess").style.display = "block";
+    document.getElementById("createdUserName").textContent = `"${name}" has been added as an agent.`;
+    
     showToast(`User "${name}" created successfully!`);
-    document.getElementById("createUserForm").reset();
     await loadUsers();
-    renderUserList();
   } catch (error) {
     showToast(error.message, "error");
   }

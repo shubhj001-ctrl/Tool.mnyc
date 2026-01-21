@@ -90,7 +90,10 @@
   <div class="admin-header">
     <h2><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
     <div class="admin-actions">
-      <button class="btn btn-primary" onclick="openUserManagementModal()">
+      <button class="btn btn-primary" onclick="openCreateUserModal()">
+        <i class="fas fa-user-plus"></i> Create User
+      </button>
+      <button class="btn btn-primary" onclick="openManageUsersModal()">
         <i class="fas fa-users-cog"></i> Manage Users
       </button>
       <button class="btn btn-outline" onclick="refreshData()">
@@ -640,57 +643,85 @@
   </div>
 </div>
 
-<!-- User Management Modal (Admin) -->
-<div class="modal-backdrop" id="userManagementModal">
-  <div class="modal modal-large">
+<!-- Create User Modal (Admin) -->
+<div class="modal-backdrop" id="createUserModal">
+  <div class="modal">
     <div class="modal-header">
-      <h3><i class="fas fa-users-cog"></i> User Management</h3>
-      <button class="btn-close" onclick="closeUserManagementModal()">
+      <h3><i class="fas fa-user-plus"></i> Create New User</h3>
+      <button class="btn-close" onclick="closeCreateUserModal()">
         <i class="fas fa-times"></i>
       </button>
     </div>
     
-    <div class="user-management-content">
-      <div class="user-management-header">
-        <h4><i class="fas fa-user-plus"></i> Create New Agent</h4>
+    <div class="create-user-content">
+      <!-- Success Message -->
+      <div class="user-created-success" id="userCreatedSuccess" style="display: none;">
+        <div class="success-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <h4>User Created Successfully!</h4>
+        <p id="createdUserName">User has been added to the system.</p>
+        <button class="btn btn-primary" onclick="resetCreateUserForm()">
+          <i class="fas fa-plus"></i> Create Another User
+        </button>
       </div>
       
+      <!-- Create User Form -->
       <form id="createUserForm" onsubmit="createNewUser(event)">
-        <div class="form-row">
-          <div class="form-group">
-            <label><i class="fas fa-user"></i> Username *</label>
-            <input type="text" id="newUsername" placeholder="Enter username" required />
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-id-badge"></i> Full Name *</label>
-            <input type="text" id="newUserName" placeholder="Enter full name" required />
-          </div>
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Username <span class="required">*</span></label>
+          <input type="text" id="newUsername" placeholder="Enter username (used for login)" required />
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label><i class="fas fa-envelope"></i> Email</label>
-            <input type="email" id="newUserEmail" placeholder="Enter email" />
-          </div>
-          <div class="form-group">
-            <label><i class="fas fa-lock"></i> Password *</label>
-            <input type="password" id="newUserPassword" placeholder="Enter password" required />
-          </div>
+        <div class="form-group">
+          <label><i class="fas fa-id-badge"></i> Full Name <span class="required">*</span></label>
+          <input type="text" id="newUserName" placeholder="Enter full name" required />
         </div>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-user-plus"></i> Create User
-        </button>
+        <div class="form-group">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="newUserEmail" placeholder="Enter email (optional)" />
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Password <span class="required">*</span></label>
+          <input type="password" id="newUserPassword" placeholder="Enter password" required />
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Create User
+          </button>
+        </div>
       </form>
-      
-      <div class="user-list-section">
-        <h4><i class="fas fa-users"></i> Existing Agents</h4>
-        <div class="user-list" id="userList">
-          <!-- Will be populated dynamically -->
-        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Users Modal (Admin) -->
+<div class="modal-backdrop" id="manageUsersModal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3><i class="fas fa-users-cog"></i> Manage Users</h3>
+      <button class="btn-close" onclick="closeManageUsersModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="manage-users-content">
+      <div class="user-list-header">
+        <span id="userCount">0 users</span>
+        <button class="btn btn-sm btn-primary" onclick="closeManageUsersModal(); openCreateUserModal();">
+          <i class="fas fa-user-plus"></i> Add New
+        </button>
+      </div>
+      <div class="user-list" id="userList">
+        <!-- Will be populated dynamically -->
       </div>
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeUserManagementModal()">
+      <button class="btn btn-secondary" onclick="closeManageUsersModal()">
         <i class="fas fa-times"></i> Close
       </button>
     </div>
