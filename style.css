@@ -1442,12 +1442,13 @@ tr.claim-paid td {
 .search-box {
   position: relative;
   flex: 1;
-  max-width: 400px;
+  max-width: 300px;
+  min-width: 180px;
 }
 
 .search-box i {
   position: absolute;
-  left: 15px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -1455,17 +1456,19 @@ tr.claim-paid td {
 
 .search-box input {
   width: 100%;
-  padding: 12px 15px 12px 45px;
-  border: 2px solid var(--border);
+  padding: 8px 12px 8px 38px;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .search-box input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 .filter-group {
@@ -1541,9 +1544,11 @@ tr.claim-paid td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  gap: 15px;
+  padding: 15px 24px;
   border-radius: var(--radius) var(--radius) 0 0;
   border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
 .card-header h2 {
@@ -1552,6 +1557,7 @@ tr.claim-paid td {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin: 0;
 }
 
 .card-header h2 i {
@@ -2966,15 +2972,32 @@ tr.selected:hover {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .card-table th,
 .card-table td {
   white-space: nowrap;
-  padding: 12px;
+  padding: 10px 8px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.card-table thead {
+  background: var(--bg);
+  border-bottom: 2px solid var(--border);
+}
+
+.card-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.card-table td {
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
 
 .card-table tbody tr:hover {

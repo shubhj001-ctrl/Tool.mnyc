@@ -202,7 +202,7 @@
 </div>
 
 <!-- Filter Bar -->
-<div class="filter-bar">
+<div class="filter-bar" style="display: none;">
   <div class="search-box">
     <i class="fas fa-search"></i>
     <input type="text" id="searchInput" placeholder="Search claims..." onkeyup="filterClaims()">
@@ -244,7 +244,24 @@
 <!-- Claims Table -->
 <div class="card">
   <div class="card-header">
-    <h2><i class="fas fa-list"></i> Claims List</h2>
+    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+      <h2 style="margin: 0;"><i class="fas fa-list"></i> Claims List</h2>
+      <div class="search-box" style="flex: 1; max-width: 300px;">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search claims..." onkeyup="filterClaims()">
+      </div>
+      <div class="filter-buttons" style="display: flex; gap: 8px;">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" data-filter="P-1" onclick="setFilter('P-1')">P-1</button>
+        <button class="filter-btn" data-filter="P-2" onclick="setFilter('P-2')">P-2</button>
+        <button class="filter-btn" data-filter="CHERRY" onclick="setFilter('CHERRY')">CHERRY</button>
+      </div>
+      <select class="agent-filter" id="agentFilter" onchange="filterClaims()" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--card); color: var(--text);">
+        <option value="all">All Agents</option>
+        <!-- Agent options will be populated dynamically -->
+        <option value="unassigned">Unassigned</option>
+      </select>
+    </div>
     <span class="badge" id="claimCount">0 claims</span>
   </div>
   <div class="table-wrapper">
