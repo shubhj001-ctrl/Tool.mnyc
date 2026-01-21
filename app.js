@@ -660,7 +660,15 @@ window.setAgentQueue = function(queue) {
 
 function getFilteredClaims() {
   const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-  const agentFilter = document.getElementById("agentFilter")?.value || "all";
+  
+  // Get agent filter from the visible dropdown in the header
+  let agentFilter = "all";
+  const agentFilterSelect = document.querySelectorAll('#agentFilter');
+  if (agentFilterSelect.length > 0) {
+    // Use the visible one (in the header)
+    agentFilter = agentFilterSelect[agentFilterSelect.length - 1].value || "all";
+  }
+  
   const agentQueueFilter = document.getElementById("agentQueueFilter")?.value || "all";
   
   return claims.filter((c, i) => {
