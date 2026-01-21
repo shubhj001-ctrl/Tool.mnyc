@@ -2196,6 +2196,14 @@ window.generateReportingData = function() {
   document.getElementById('closedTodayCount').textContent = closedToday;
   document.getElementById('noDtWorkedCount').textContent = noDtWorked;
   document.getElementById('pendingClaimsCount').textContent = pendingClaims;
+  
+  // Reset filter checkboxes
+  document.getElementById('filterPaidOnly').checked = false;
+  document.getElementById('filterPendingOnly').checked = false;
+  
+  // Store original data for filtering
+  originalReportData = reportClaims;
+  
   document.getElementById('advancedFiltersAdmin').style.display = 'block';
   
   displayReportingData(reportClaims);
@@ -2236,6 +2244,14 @@ window.generateMyReportingData = function() {
   document.getElementById('myClosedTodayCount').textContent = closedToday;
   document.getElementById('myNoDtWorkedCount').textContent = noDtWorked;
   document.getElementById('myPendingClaimsCount').textContent = pendingClaims;
+  
+  // Reset filter checkboxes
+  document.getElementById('filterPaidOnlyAgent').checked = false;
+  document.getElementById('filterPendingOnlyAgent').checked = false;
+  
+  // Store original data for filtering
+  originalReportData = reportClaims;
+  
   document.getElementById('advancedFiltersAgent').style.display = 'block';
   
   displayReportingData(reportClaims);
@@ -2246,6 +2262,8 @@ window.clearReportingFilters = function() {
   document.getElementById('reportingAgentSelect').value = '';
   document.getElementById('reportingStartDate').value = '';
   document.getElementById('reportingEndDate').value = '';
+  document.getElementById('filterPaidOnly').checked = false;
+  document.getElementById('filterPendingOnly').checked = false;
   
   // Hide stats and advanced filtering
   document.getElementById('reportingStats').style.display = 'none';
@@ -2260,6 +2278,8 @@ window.clearMyReportingFilters = function() {
   // Clear agent section filters
   document.getElementById('myReportingStartDate').value = '';
   document.getElementById('myReportingEndDate').value = '';
+  document.getElementById('filterPaidOnlyAgent').checked = false;
+  document.getElementById('filterPendingOnlyAgent').checked = false;
   
   // Hide stats and advanced filtering
   document.getElementById('reportingStats').style.display = 'none';
@@ -2321,6 +2341,61 @@ function displayReportingData(data) {
   tableWrapper.style.display = 'block';
   emptyState.style.display = 'none';
 }
+
+// ==================== STATUS FILTER FUNCTIONS ====================
+// Store original report data for filtering
+let originalReportData = [];
+
+window.applyStatusFilter = function() {
+  const filterPaidOnly = document.getElementById('filterPaidOnly').checked;
+  const filterPendingOnly = document.getElementById('filterPendingOnly').checked;
+  
+  let filteredData = [...originalReportData];
+  
+  if (filterPaidOnly && !filterPendingOnly) {
+    // Show only PAID claims from worked claims
+    filteredData = filteredData.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
+  } else if (filterPendingOnly && !filterPaidOnly) {
+    // Show only PENDING claims that weren't worked on (no dateWorked)
+    filteredData = filteredData.filter(c => c.status === "PENDING" && !c.dateWorked);
+  }
+  
+  displayReportingData(filteredData);
+};
+
+window.applyStatusFilterAgent = function() {
+  const filterPaidOnly = document.getElementById('filterPaidOnlyAgent').checked;
+  const filterPendingOnly = document.getElementById('filterPendingOnlyAgent').checked;
+  
+  let filteredData = [...originalReportData];
+  
+  if (filterPaidOnly && !filterPendingOnly) {
+    // Show only PAID claims from worked claims
+    filteredData = filteredData.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
+  } else if (filterPendingOnly && !filterPaidOnly) {
+    // Show only PENDING claims that weren't worked on (no dateWorked)
+    filteredData = filteredData.filter(c => c.status === "PENDING" && !c.dateWorked);
+  }
+  
+  displayReportingData(filteredData);
+};
+
+window.applyStatusFilterAdmin = function() {
+  const filterPaidOnly = document.getElementById('filterPaidOnlyAdmin').checked;
+  const filterPendingOnly = document.getElementById('filterPendingOnlyAdmin').checked;
+  
+  let filteredData = [...originalReportData];
+  
+  if (filterPaidOnly && !filterPendingOnly) {
+    // Show only PAID claims from worked claims
+    filteredData = filteredData.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
+  } else if (filterPendingOnly && !filterPaidOnly) {
+    // Show only PENDING claims that weren't worked on (no dateWorked)
+    filteredData = filteredData.filter(c => c.status === "PENDING" && !c.dateWorked);
+  }
+  
+  displayReportingData(filteredData);
+};
 
 // ==================== REPORTING FUNCTIONS ====================
 let currentReportType = 'all';
