@@ -1969,6 +1969,328 @@ window.saveProfile = async function(event) {
   }
 };
 
+// ==================== CARD MODAL FUNCTIONS ====================
+window.openCardModal = function(type) {
+  const modal = document.getElementById('cardViewModal');
+  const title = document.getElementById('cardModalTitle');
+  const extraColumn = document.getElementById('extraColumn');
+  
+  // Set title and extra column header
+  if (type === 'pending') {
+    title.textContent = 'Pending Claims';
+    extraColumn.style.display = 'none';
+  } else if (type === 'paid') {
+    title.textContent = 'Paid Claims';
+    extraColumn.textContent = 'Status';
+    extraColumn.style.display = 'table-cell';
+  } else if (type === 'overdue') {
+    title.textContent = 'Overdue Claims';
+    extraColumn.textContent = 'Next Follow-Up';
+    extraColumn.style.display = 'table-cell';
+  }
+  
+  // Populate the modal with data
+  populateCardModal(type);
+  
+  // Show the modal
+  modal.style.display = 'flex';
+  modal.classList.add('modal-open');
+};
+
+window.closeCardModal = function() {
+  const modal = document.getElementById('cardViewModal');
+  modal.classList.remove('modal-open');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 200);
+};
+
+function populateCardModal(type) {
+  const tableWrapper = document.getElementById('cardTableWrapper');
+  const emptyState = document.getElementById('emptyCardState');
+  const tableBody = document.getElementById('cardTableBody');
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let filteredClaims = [];
+  
+  if (type === 'pending') {
+    filteredClaims = claims.filter(c => c.dateWorked === null && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV");
+  } else if (type === 'paid') {
+    filteredClaims = claims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
+  } else if (type === 'overdue') {
+    filteredClaims = claims.filter(c => {
+      if (!c.nextFollowUp) return false;
+      const next = new Date(c.nextFollowUp);
+      next.setHours(0, 0, 0, 0);
+      return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
+    });
+  }
+  
+  if (filteredClaims.length === 0) {
+    tableWrapper.style.display = 'none';
+    emptyState.style.display = 'flex';
+    return;
+  }
+  
+  tableBody.innerHTML = '';
+  filteredClaims.forEach(claim => {
+    const row = document.createElement('tr');
+    const status = claim.status || '-';
+    const nextFollowUp = claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-';
+    const assignedTo = claim.assignedTo || 'Unassigned';
+    const priority = claim.priority || '-';
+    
+    let extraCellContent = '';
+    if (type === 'paid') {
+      extraCellContent = `<td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>`;
+    } else if (type === 'overdue') {
+      extraCellContent = `<td>${nextFollowUp}</td>`;
+    }
+    
+    row.innerHTML = `
+      <td><strong>${claim.claimNo}</strong></td>
+      <td>${claim.patient}</td>
+      <td>$${(claim.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td>${priority}</td>
+      <td>${assignedTo}</td>
+      ${extraCellContent}
+    `;
+    tableBody.appendChild(row);
+  });
+  
+  tableWrapper.style.display = 'block';
+  emptyState.style.display = 'none';
+}
+
+// ==================== REPORTING SECTION FUNCTIONS ====================
+window.openAgentReporting = function() {
+  const reportingSection = document.getElementById('reportingSection');
+  const adminSection = document.getElementById('adminReportingSection');
+  const title = document.getElementById('reportingSectionTitle');
+  
+  title.textContent = 'Agent Reports';
+  adminSection.style.display = 'block';
+  
+  // Hide main content
+  const mainContent = document.querySelector('.admin-controls ~ *:not(.modal-backdrop)');
+  const allCards = document.querySelectorAll('.card, .stats-container, .filter-bar, .admin-controls, .bulk-actions');
+  allCards.forEach(el => {
+    if (el !== reportingSection && !el.id.includes('modal')) {
+      el.style.display = 'none';
+    }
+  });
+  
+  reportingSection.style.display = 'block';
+  
+  // Populate agent dropdown
+  populateAgentDropdown();
+  
+  // Set default dates
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('reportingStartDate').value = today;
+  document.getElementById('reportingEndDate').value = today;
+  
+  // Clear any previous data
+  document.getElementById('reportingTableWrapper').style.display = 'none';
+  document.getElementById('reportingStats').style.display = 'none';
+  document.getElementById('emptyReportingState').style.display = 'none';
+};
+
+window.openMyReporting = function() {
+  const reportingSection = document.getElementById('reportingSection');
+  const agentSection = document.getElementById('agentReportingSection');
+  const adminSection = document.getElementById('adminReportingSection');
+  const title = document.getElementById('reportingSectionTitle');
+  
+  title.textContent = 'My Report';
+  agentSection.style.display = 'block';
+  adminSection.style.display = 'none';
+  
+  // Hide main content
+  const allCards = document.querySelectorAll('.card, .stats-container, .filter-bar, .agent-header, .bulk-actions');
+  allCards.forEach(el => {
+    if (el !== reportingSection && !el.id.includes('modal')) {
+      el.style.display = 'none';
+    }
+  });
+  
+  reportingSection.style.display = 'block';
+  
+  // Set default dates
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('myReportingStartDate').value = today;
+  document.getElementById('myReportingEndDate').value = today;
+  
+  // Clear any previous data
+  document.getElementById('reportingTableWrapper').style.display = 'none';
+  document.getElementById('reportingStats').style.display = 'none';
+  document.getElementById('emptyReportingState').style.display = 'none';
+};
+
+window.closeReportingSection = function() {
+  const reportingSection = document.getElementById('reportingSection');
+  reportingSection.style.display = 'none';
+  
+  // Show main content again
+  const allCards = document.querySelectorAll('.card, .stats-container, .filter-bar, .admin-controls, .agent-header, .bulk-actions');
+  allCards.forEach(el => {
+    if (!el.id.includes('modal')) {
+      el.style.display = '';
+    }
+  });
+};
+
+function populateAgentDropdown() {
+  const select = document.getElementById('reportingAgentSelect');
+  select.innerHTML = '<option value="">-- Select Agent --</option>';
+  
+  allUsers.forEach((user) => {
+    const option = document.createElement('option');
+    option.value = user.odoo_id;
+    option.textContent = user.name;
+    select.appendChild(option);
+  });
+}
+
+window.generateReportingData = function() {
+  const agentSelect = document.getElementById('reportingAgentSelect');
+  const startDate = document.getElementById('reportingStartDate').value;
+  const endDate = document.getElementById('reportingEndDate').value;
+  const selectedAgent = agentSelect.value;
+  
+  if (!selectedAgent) {
+    showToast('Please select an agent', 'error');
+    return;
+  }
+  
+  if (!startDate || !endDate) {
+    showToast('Please select both start and end dates', 'error');
+    return;
+  }
+  
+  if (new Date(startDate) > new Date(endDate)) {
+    showToast('Start date must be before end date', 'error');
+    return;
+  }
+  
+  const showClosedOnly = document.getElementById('showClosedOnly').checked;
+  const showOpenOnly = document.getElementById('showOpenOnly').checked;
+  
+  // Filter claims for the selected agent within date range
+  const startDateObj = new Date(startDate);
+  const endDateObj = new Date(endDate);
+  endDateObj.setHours(23, 59, 59, 999);
+  
+  let reportClaims = claims.filter(c => {
+    if (!c.dateWorked) return false;
+    const worked = new Date(c.dateWorked);
+    if (worked < startDateObj || worked > endDateObj) return false;
+    if (c.assignedTo !== selectedAgent) return false;
+    
+    // Apply advanced filtering
+    const isClosed = c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV";
+    if (showClosedOnly && !isClosed) return false;
+    if (showOpenOnly && isClosed) return false;
+    
+    return true;
+  });
+  
+  displayReportingData(reportClaims);
+};
+
+window.generateMyReportingData = function() {
+  const startDate = document.getElementById('myReportingStartDate').value;
+  const endDate = document.getElementById('myReportingEndDate').value;
+  
+  if (!startDate || !endDate) {
+    showToast('Please select both start and end dates', 'error');
+    return;
+  }
+  
+  if (new Date(startDate) > new Date(endDate)) {
+    showToast('Start date must be before end date', 'error');
+    return;
+  }
+  
+  const showClosedOnly = document.getElementById('showClosedOnly').checked;
+  const showOpenOnly = document.getElementById('showOpenOnly').checked;
+  
+  // Filter claims for current user within date range
+  const startDateObj = new Date(startDate);
+  const endDateObj = new Date(endDate);
+  endDateObj.setHours(23, 59, 59, 999);
+  
+  let reportClaims = claims.filter(c => {
+    if (!c.dateWorked) return false;
+    const worked = new Date(c.dateWorked);
+    if (worked < startDateObj || worked > endDateObj) return false;
+    if (c.assignedTo !== currentUser.id) return false;
+    
+    // Apply advanced filtering
+    const isClosed = c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV";
+    if (showClosedOnly && !isClosed) return false;
+    if (showOpenOnly && isClosed) return false;
+    
+    return true;
+  });
+  
+  displayReportingData(reportClaims);
+};
+
+function displayReportingData(data) {
+  const tableWrapper = document.getElementById('reportingTableWrapper');
+  const statsSection = document.getElementById('reportingStats');
+  const emptyState = document.getElementById('emptyReportingState');
+  const tableBody = document.getElementById('reportingTableBody');
+  
+  if (data.length === 0) {
+    tableWrapper.style.display = 'none';
+    statsSection.style.display = 'none';
+    emptyState.style.display = 'flex';
+    return;
+  }
+  
+  // Calculate stats
+  const closedCount = data.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
+  const openCount = data.length - closedCount;
+  const totalBalance = data.reduce((sum, claim) => sum + (claim.balance || 0), 0);
+  
+  // Display stats
+  document.getElementById('totalWorkedClaims').textContent = data.length;
+  document.getElementById('closedClaimCount').textContent = closedCount;
+  document.getElementById('openClaimCount').textContent = openCount;
+  document.getElementById('reportingTotalBalance').textContent = '$' + totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  statsSection.style.display = 'flex';
+  
+  // Populate table
+  tableBody.innerHTML = '';
+  data.forEach(claim => {
+    const row = document.createElement('tr');
+    const dateWorked = claim.dateWorked ? new Date(claim.dateWorked).toLocaleDateString() : '-';
+    const nextFollowUp = claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-';
+    const assignedTo = claim.assignedTo || 'Unassigned';
+    const status = claim.status || '-';
+    const priority = claim.priority || '-';
+    
+    row.innerHTML = `
+      <td><strong>${claim.claimNo}</strong></td>
+      <td>${claim.patient}</td>
+      <td>$${(claim.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+      <td>${priority}</td>
+      <td>${assignedTo}</td>
+      <td>${dateWorked}</td>
+      <td>${nextFollowUp}</td>
+    `;
+    tableBody.appendChild(row);
+  });
+  
+  tableWrapper.style.display = 'block';
+  emptyState.style.display = 'none';
+}
+
 // ==================== REPORTING FUNCTIONS ====================
 let currentReportType = 'all';
 let currentReportData = [];

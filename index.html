@@ -111,6 +111,9 @@
       <button class="btn btn-outline" onclick="addNewClaim()">
         <i class="fas fa-plus"></i> Add Claim
       </button>
+      <button class="btn btn-primary" onclick="openAgentReporting()" style="margin-left: 15px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+        <i class="fas fa-chart-line"></i> Agent Reports
+      </button>
     </div>
   </div>
   
@@ -155,12 +158,15 @@
     <button class="btn btn-outline" onclick="exportData()">
       <i class="fas fa-download"></i> Export
     </button>
+    <button class="btn btn-primary" onclick="openMyReporting()" style="margin-left: 15px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+      <i class="fas fa-chart-line"></i> My Report
+    </button>
   </div>
 </div>
 
 <!-- Stats Dashboard -->
 <div class="stats-container">
-  <div class="stat-card clickable-card" onclick="openReportingModal('all')">
+  <div class="stat-card" id="allClaimsCard" title="Hover to see upload dates">
     <div class="stat-icon stat-icon-blue">
       <i class="fas fa-file-invoice"></i>
     </div>
@@ -169,7 +175,7 @@
       <span class="stat-label" id="totalLabel">Total Claims</span>
     </div>
   </div>
-  <div class="stat-card clickable-card" onclick="openReportingModal('pending')">
+  <div class="stat-card clickable-card" onclick="openCardModal('pending')">
     <div class="stat-icon stat-icon-yellow">
       <i class="fas fa-clock"></i>
     </div>
@@ -178,7 +184,7 @@
       <span class="stat-label">Pending</span>
     </div>
   </div>
-  <div class="stat-card clickable-card" onclick="openReportingModal('paid')">
+  <div class="stat-card clickable-card" onclick="openCardModal('paid')">
     <div class="stat-icon stat-icon-green">
       <i class="fas fa-check-circle"></i>
     </div>
@@ -187,7 +193,7 @@
       <span class="stat-label">Paid</span>
     </div>
   </div>
-  <div class="stat-card clickable-card" onclick="openReportingModal('overdue')">
+  <div class="stat-card clickable-card" onclick="openCardModal('overdue')">
     <div class="stat-icon stat-icon-red">
       <i class="fas fa-exclamation-triangle"></i>
     </div>
@@ -792,83 +798,153 @@
   </div>
 </div>
 
-<!-- Reporting Modal -->
-<div class="modal-backdrop" id="reportingModal">
+<!-- Card View Modal (For Pending/Paid/Overdue) -->
+<div class="modal-backdrop" id="cardViewModal">
   <div class="modal modal-large">
     <div class="modal-header">
-      <h3><i class="fas fa-chart-bar"></i> <span id="reportTitle">Claims Report</span></h3>
-      <button class="btn-close" onclick="closeReportingModal()">
+      <h3><i class="fas fa-list"></i> <span id="cardModalTitle">Claims</span></h3>
+      <button class="btn-close" onclick="closeCardModal()">
         <i class="fas fa-times"></i>
       </button>
     </div>
-    
-    <div class="reporting-filter-section">
-      <div class="filter-row">
-        <div class="filter-item">
-          <label><i class="fas fa-calendar-alt"></i> Start Date</label>
-          <input type="date" id="reportStartDate" />
-        </div>
-        <div class="filter-item">
-          <label><i class="fas fa-calendar-alt"></i> End Date</label>
-          <input type="date" id="reportEndDate" />
-        </div>
-        <div class="filter-item" id="agentFilterItem" style="display: none;">
+
+    <div class="card-table-wrapper" id="cardTableWrapper" style="display: none;">
+      <table class="card-table">
+        <thead>
+          <tr>
+            <th>Claim #</th>
+            <th>Patient</th>
+            <th>Balance</th>
+            <th>Priority</th>
+            <th>Assigned To</th>
+            <th id="extraColumn" style="display: none;"></th>
+          </tr>
+        </thead>
+        <tbody id="cardTableBody">
+          <!-- Will be populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" id="emptyCardState" style="display: none;">
+      <i class="fas fa-inbox"></i>
+      <p>No claims found</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeCardModal()">
+        <i class="fas fa-times"></i> Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Reporting Section (for both Admin and Agent) -->
+<div id="reportingSection" style="display: none;">
+  <div class="reporting-header">
+    <div class="reporting-title">
+      <i class="fas fa-chart-bar"></i>
+      <h2 id="reportingSectionTitle">Agent Reports</h2>
+    </div>
+    <button class="btn btn-outline" onclick="closeReportingSection()">
+      <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </button>
+  </div>
+
+  <div class="reporting-container">
+    <!-- Admin Reports -->
+    <div id="adminReportingSection" style="display: none;">
+      <div class="reporting-filters">
+        <div class="filter-group">
           <label><i class="fas fa-user-tie"></i> Select Agent</label>
-          <select id="reportAgentFilter">
-            <option value="">-- All Agents --</option>
-            <!-- Will be populated dynamically -->
+          <select id="reportingAgentSelect" onchange="generateReportingData()">
+            <option value="">-- Select Agent --</option>
           </select>
         </div>
-        <div class="filter-actions">
-          <button class="btn btn-primary btn-sm" onclick="generateReport()">
-            <i class="fas fa-filter"></i> Generate Report
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="exportReportData()">
-            <i class="fas fa-download"></i> Export
-          </button>
+        <div class="filter-group">
+          <label><i class="fas fa-calendar-alt"></i> Start Date</label>
+          <input type="date" id="reportingStartDate" onchange="generateReportingData()" />
+        </div>
+        <div class="filter-group">
+          <label><i class="fas fa-calendar-alt"></i> End Date</label>
+          <input type="date" id="reportingEndDate" onchange="generateReportingData()" />
         </div>
       </div>
     </div>
 
-    <div class="report-stats-section" id="reportStatsSection" style="display: none;">
-      <div class="report-stat">
-        <span class="report-stat-label">Total Claims</span>
-        <span class="report-stat-value" id="reportTotalClaims">0</span>
-      </div>
-      <div class="report-stat">
-        <span class="report-stat-label">Total Balance</span>
-        <span class="report-stat-value" id="reportTotalBalance">$0</span>
+    <!-- Agent Reports (Personal) -->
+    <div id="agentReportingSection" style="display: none;">
+      <div class="reporting-filters">
+        <div class="filter-group">
+          <label><i class="fas fa-calendar-alt"></i> Start Date</label>
+          <input type="date" id="myReportingStartDate" onchange="generateMyReportingData()" />
+        </div>
+        <div class="filter-group">
+          <label><i class="fas fa-calendar-alt"></i> End Date</label>
+          <input type="date" id="myReportingEndDate" onchange="generateMyReportingData()" />
+        </div>
       </div>
     </div>
 
-    <div class="report-table-wrapper" id="reportTableWrapper" style="display: none;">
-      <table class="report-table">
+    <!-- Report Stats -->
+    <div class="reporting-stats" id="reportingStats" style="display: none;">
+      <div class="stat-box">
+        <span class="stat-label">Total Claims Worked</span>
+        <span class="stat-number" id="totalWorkedClaims">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Closed Claims</span>
+        <span class="stat-number" id="closedClaimCount">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Open Claims</span>
+        <span class="stat-number" id="openClaimCount">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Total Balance</span>
+        <span class="stat-number" id="reportingTotalBalance">$0</span>
+      </div>
+    </div>
+
+    <!-- Advanced Filtering -->
+    <div class="advanced-filtering">
+      <h3><i class="fas fa-filter"></i> Advanced Filtering</h3>
+      <div class="filter-options">
+        <label class="filter-checkbox">
+          <input type="checkbox" id="showClosedOnly" onchange="generateReportingData(); generateMyReportingData();" />
+          Show Closed Claims Only
+        </label>
+        <label class="filter-checkbox">
+          <input type="checkbox" id="showOpenOnly" onchange="generateReportingData(); generateMyReportingData();" />
+          Show Open Claims Only
+        </label>
+      </div>
+    </div>
+
+    <!-- Report Table -->
+    <div class="reporting-table-wrapper" id="reportingTableWrapper" style="display: none;">
+      <table class="reporting-table">
         <thead>
           <tr>
             <th>Claim #</th>
             <th>Patient</th>
             <th>Balance</th>
             <th>Status</th>
+            <th>Priority</th>
             <th>Assigned To</th>
             <th>Date Worked</th>
             <th>Next Follow-Up</th>
           </tr>
         </thead>
-        <tbody id="reportTableBody">
+        <tbody id="reportingTableBody">
           <!-- Will be populated dynamically -->
         </tbody>
       </table>
     </div>
 
-    <div class="empty-report" id="emptyReport" style="display: none;">
+    <div class="empty-state" id="emptyReportingState" style="display: none;">
       <i class="fas fa-inbox"></i>
       <p>No claims found for the selected criteria</p>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeReportingModal()">
-        <i class="fas fa-times"></i> Close
-      </button>
     </div>
   </div>
 </div>
