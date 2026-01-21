@@ -2175,31 +2175,28 @@ window.generateReportingData = function() {
     return;
   }
   
-  // Filter claims for the selected agent where dateWorked equals the selected date(s)
+  // Filter claims for the selected agent in the selected date range
   const startDateObj = new Date(startDate);
   const endDateObj = new Date(endDate);
   endDateObj.setHours(23, 59, 59, 999);
   
+  // Show ALL claims assigned to this user that fall within the date range
   let reportClaims = claims.filter(c => {
     if (c.assignedTo !== selectedAgent) return false;
-    if (!c.dateWorked) return false;
-    const worked = new Date(c.dateWorked);
-    return worked >= startDateObj && worked <= endDateObj;
+    if (!c.dateAssigned) return false;
+    const assigned = new Date(c.dateAssigned);
+    return assigned >= startDateObj && assigned <= endDateObj;
   });
   
-  // Calculate quick stats for advanced filtering
-  const closedToday = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
-  const noDtWorked = claims.filter(c => c.assignedTo === selectedAgent && !c.dateWorked).length;
-  const pendingClaims = claims.filter(c => c.assignedTo === selectedAgent && c.status === "PENDING").length;
+  // Calculate quick stats
+  const totalClaims = reportClaims.length;
+  const closedClaims = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
+  const pendingClaims = reportClaims.filter(c => c.status === "PENDING").length;
   
   // Display quick stats
-  document.getElementById('closedTodayCount').textContent = closedToday;
-  document.getElementById('noDtWorkedCount').textContent = noDtWorked;
-  document.getElementById('pendingClaimsCount').textContent = pendingClaims;
-  
-  // Reset filter checkboxes
-  document.getElementById('filterPaidOnly').checked = false;
-  document.getElementById('filterPendingOnly').checked = false;
+  document.getElementById('totalClaimsCount').textContent = totalClaims;
+  document.getElementById('closedCountAdmin').textContent = closedClaims;
+  document.getElementById('pendingCountAdmin').textContent = pendingClaims;
   
   // Store original data for filtering
   originalReportData = reportClaims;
@@ -2223,31 +2220,28 @@ window.generateMyReportingData = function() {
     return;
   }
   
-  // Filter claims for current user where dateWorked equals the selected date(s)
+  // Filter claims for current user in the selected date range
   const startDateObj = new Date(startDate);
   const endDateObj = new Date(endDate);
   endDateObj.setHours(23, 59, 59, 999);
   
+  // Show ALL claims assigned to current user that fall within the date range
   let reportClaims = claims.filter(c => {
     if (c.assignedTo !== currentUser.id) return false;
-    if (!c.dateWorked) return false;
-    const worked = new Date(c.dateWorked);
-    return worked >= startDateObj && worked <= endDateObj;
+    if (!c.dateAssigned) return false;
+    const assigned = new Date(c.dateAssigned);
+    return assigned >= startDateObj && assigned <= endDateObj;
   });
   
-  // Calculate quick stats for advanced filtering
-  const closedToday = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
-  const noDtWorked = claims.filter(c => c.assignedTo === currentUser.id && !c.dateWorked).length;
-  const pendingClaims = claims.filter(c => c.assignedTo === currentUser.id && c.status === "PENDING").length;
+  // Calculate quick stats
+  const totalClaims = reportClaims.length;
+  const closedClaims = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
+  const pendingClaims = reportClaims.filter(c => c.status === "PENDING").length;
   
   // Display quick stats
-  document.getElementById('myClosedTodayCount').textContent = closedToday;
-  document.getElementById('myNoDtWorkedCount').textContent = noDtWorked;
-  document.getElementById('myPendingClaimsCount').textContent = pendingClaims;
-  
-  // Reset filter checkboxes
-  document.getElementById('filterPaidOnlyAgent').checked = false;
-  document.getElementById('filterPendingOnlyAgent').checked = false;
+  document.getElementById('myTotalClaimsCount').textContent = totalClaims;
+  document.getElementById('myClosedCount').textContent = closedClaims;
+  document.getElementById('myPendingCount').textContent = pendingClaims;
   
   // Store original data for filtering
   originalReportData = reportClaims;
@@ -2262,8 +2256,6 @@ window.clearReportingFilters = function() {
   document.getElementById('reportingAgentSelect').value = '';
   document.getElementById('reportingStartDate').value = '';
   document.getElementById('reportingEndDate').value = '';
-  document.getElementById('filterPaidOnly').checked = false;
-  document.getElementById('filterPendingOnly').checked = false;
   
   // Hide stats and advanced filtering
   document.getElementById('reportingStats').style.display = 'none';
@@ -2278,8 +2270,6 @@ window.clearMyReportingFilters = function() {
   // Clear agent section filters
   document.getElementById('myReportingStartDate').value = '';
   document.getElementById('myReportingEndDate').value = '';
-  document.getElementById('filterPaidOnlyAgent').checked = false;
-  document.getElementById('filterPendingOnlyAgent').checked = false;
   
   // Hide stats and advanced filtering
   document.getElementById('reportingStats').style.display = 'none';
@@ -2341,61 +2331,6 @@ function displayReportingData(data) {
   tableWrapper.style.display = 'block';
   emptyState.style.display = 'none';
 }
-
-// ==================== STATUS FILTER FUNCTIONS ====================
-// Store original report data for filtering
-let originalReportData = [];
-
-window.applyStatusFilter = function() {
-  const filterPaidOnly = document.getElementById('filterPaidOnly').checked;
-  const filterPendingOnly = document.getElementById('filterPendingOnly').checked;
-  
-  let filteredData = [...originalReportData];
-  
-  if (filterPaidOnly && !filterPendingOnly) {
-    // Show only PAID claims from worked claims
-    filteredData = filteredData.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
-  } else if (filterPendingOnly && !filterPaidOnly) {
-    // Show only PENDING claims that weren't worked on (no dateWorked)
-    filteredData = filteredData.filter(c => c.status === "PENDING" && !c.dateWorked);
-  }
-  
-  displayReportingData(filteredData);
-};
-
-window.applyStatusFilterAgent = function() {
-  const filterPaidOnly = document.getElementById('filterPaidOnlyAgent').checked;
-  const filterPendingOnly = document.getElementById('filterPendingOnlyAgent').checked;
-  
-  let filteredData = [...originalReportData];
-  
-  if (filterPaidOnly && !filterPendingOnly) {
-    // Show only PAID claims from worked claims
-    filteredData = filteredData.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
-  } else if (filterPendingOnly && !filterPaidOnly) {
-    // Show only PENDING claims that weren't worked on (no dateWorked)
-    filteredData = filteredData.filter(c => c.status === "PENDING" && !c.dateWorked);
-  }
-  
-  displayReportingData(filteredData);
-};
-
-window.applyStatusFilterAdmin = function() {
-  const filterPaidOnly = document.getElementById('filterPaidOnlyAdmin').checked;
-  const filterPendingOnly = document.getElementById('filterPendingOnlyAdmin').checked;
-  
-  let filteredData = [...originalReportData];
-  
-  if (filterPaidOnly && !filterPendingOnly) {
-    // Show only PAID claims from worked claims
-    filteredData = filteredData.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
-  } else if (filterPendingOnly && !filterPaidOnly) {
-    // Show only PENDING claims that weren't worked on (no dateWorked)
-    filteredData = filteredData.filter(c => c.status === "PENDING" && !c.dateWorked);
-  }
-  
-  displayReportingData(filteredData);
-};
 
 // ==================== REPORTING FUNCTIONS ====================
 let currentReportType = 'all';
