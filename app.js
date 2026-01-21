@@ -743,7 +743,7 @@ function render() {
       <td>${getPriorityBadge(c.priority)}</td>
       <td>${getAssignedBadge(c.assignedTo)}${sharedIndicator}</td>
       <td>${getStatusBadge(c.status)}</td>
-      <td>${c.dateWorked ? new Date(c.dateWorked).toLocaleString() : "-"}</td>
+      <td>${c.dateWorked ? new Date(c.dateWorked).toLocaleDateString() : "-"}</td>
       <td>${c.nextFollowUp ? new Date(c.nextFollowUp).toLocaleDateString() : "-"}</td>
       <td>
         <span class="history-count" onclick="openHistoryModal('${claimId}')" title="View history">
