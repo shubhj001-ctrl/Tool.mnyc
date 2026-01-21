@@ -2180,9 +2180,12 @@ window.generateReportingData = function() {
   const endDateObj = new Date(endDate);
   endDateObj.setHours(23, 59, 59, 999);
   
-  // Show ALL claims assigned to this user (ignore date range for now, just show assigned claims)
+  // Show only claims assigned to this user AND worked on during the selected date range
   let reportClaims = claims.filter(c => {
-    return c.assignedTo === selectedAgent;
+    if (c.assignedTo !== selectedAgent) return false;
+    if (!c.dateWorked) return false; // Must have a dateWorked
+    const workedDate = new Date(c.dateWorked);
+    return workedDate >= startDateObj && workedDate <= endDateObj;
   });
   
   // Calculate quick stats
@@ -2222,9 +2225,12 @@ window.generateMyReportingData = function() {
   const endDateObj = new Date(endDate);
   endDateObj.setHours(23, 59, 59, 999);
   
-  // Show ALL claims assigned to current user (ignore date range for now, just show assigned claims)
+  // Show only claims assigned to current user AND worked on during the selected date range
   let reportClaims = claims.filter(c => {
-    return c.assignedTo === currentUser.id;
+    if (c.assignedTo !== currentUser.id) return false;
+    if (!c.dateWorked) return false; // Must have a dateWorked
+    const workedDate = new Date(c.dateWorked);
+    return workedDate >= startDateObj && workedDate <= endDateObj;
   });
   
   // Calculate quick stats
