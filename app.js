@@ -2148,7 +2148,7 @@ function populateCardModal(type) {
   filteredClaims.forEach(claim => {
     const row = document.createElement('tr');
     const status = claim.status || '-';
-    const nextFollowUp = claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-';
+    const nextFollowUp = claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-';
     const assignedTo = claim.assignedTo || 'Unassigned';
     const priority = claim.priority || '-';
     
@@ -2352,8 +2352,8 @@ function displayReportingData(data) {
   tableBody.innerHTML = '';
   data.forEach(claim => {
     const row = document.createElement('tr');
-    const dateWorked = claim.dateWorked ? new Date(claim.dateWorked).toLocaleDateString() : '-';
-    const nextFollowUp = claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-';
+    const dateWorked = claim.dateWorked ? toESTDate(claim.dateWorked) : '-';
+    const nextFollowUp = claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-';
     const assignedTo = claim.assignedTo || 'Unassigned';
     const status = claim.status || '-';
     const priority = claim.priority || '-';
@@ -2533,8 +2533,8 @@ function displayReportData(data, startDate, endDate) {
   tableBody.innerHTML = '';
   data.forEach(claim => {
     const row = document.createElement('tr');
-    const dateWorked = claim.dateWorked ? new Date(claim.dateWorked).toLocaleDateString() : '-';
-    const nextFollowUp = claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-';
+    const dateWorked = claim.dateWorked ? toESTDate(claim.dateWorked) : '-';
+    const nextFollowUp = claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-';
     const assignedTo = claim.assignedTo || 'Unassigned';
     const status = claim.status || '-';
     
@@ -2569,8 +2569,8 @@ window.exportReportData = function() {
       claim.balance || 0,
       claim.status || '-',
       claim.assignedTo || 'Unassigned',
-      claim.dateWorked ? new Date(claim.dateWorked).toLocaleDateString() : '-',
-      claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-'
+      claim.dateWorked ? toESTDate(claim.dateWorked) : '-',
+      claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-'
     ]);
     
     // Create CSV content
