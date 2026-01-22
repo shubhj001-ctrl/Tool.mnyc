@@ -566,7 +566,9 @@ function renderEmployeeCards() {
   const container = document.getElementById('employeeCardsContainer');
   if (!container) return;
   
-  const empIds = Object.keys(employeeMap);
+  // Get all employees except current user
+  const allEmpIds = Object.keys(employeeMap);
+  const empIds = allEmpIds.filter(empId => empId !== currentUser.odoo_id);
   const totalPages = Math.ceil(empIds.length / employeesPerPage);
   
   // Ensure current page is valid
@@ -649,8 +651,8 @@ window.goToEmployeePage = function(page) {
 function populateAgentDropdowns() {
   const empIds = Object.keys(employeeMap);
   
-  // Agent filter dropdowns (both hidden and visible)
-  document.querySelectorAll('#agentFilter').forEach(agentFilter => {
+  // Agent filter dropdowns (both hidden and visible) - #agentFilter and #claimsAgentFilter
+  document.querySelectorAll('#agentFilter, #claimsAgentFilter').forEach(agentFilter => {
     // Keep first option (All Agents) and last option (Unassigned)
     const firstOption = agentFilter.querySelector('option[value="all"]');
     const lastOption = agentFilter.querySelector('option[value="unassigned"]');
