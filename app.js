@@ -668,29 +668,35 @@ function populateAgentDropdowns() {
     if (lastOption) agentFilter.appendChild(lastOption.cloneNode(true));
   });
   
-  // Assign agent dropdown
+  // Assign agent dropdown (exclude current user)
   const assignAgentSelect = document.getElementById('assignAgentSelect');
   if (assignAgentSelect) {
     assignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
     empIds.forEach(empId => {
-      const emp = employeeMap[empId];
-      const option = document.createElement('option');
-      option.value = empId;
-      option.textContent = `${emp.name} (${empId})`;
-      assignAgentSelect.appendChild(option);
+      // Exclude current user from assignment dropdown
+      if (empId !== currentUser.odoo_id) {
+        const emp = employeeMap[empId];
+        const option = document.createElement('option');
+        option.value = empId;
+        option.textContent = `${emp.name} (${empId})`;
+        assignAgentSelect.appendChild(option);
+      }
     });
   }
   
-  // Bulk assign agent dropdown
+  // Bulk assign agent dropdown (exclude current user)
   const bulkAssignAgentSelect = document.getElementById('bulkAssignAgentSelect');
   if (bulkAssignAgentSelect) {
     bulkAssignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
     empIds.forEach(empId => {
-      const emp = employeeMap[empId];
-      const option = document.createElement('option');
-      option.value = empId;
-      option.textContent = `${emp.name} (${empId})`;
-      bulkAssignAgentSelect.appendChild(option);
+      // Exclude current user from bulk assignment dropdown
+      if (empId !== currentUser.odoo_id) {
+        const emp = employeeMap[empId];
+        const option = document.createElement('option');
+        option.value = empId;
+        option.textContent = `${emp.name} (${empId})`;
+        bulkAssignAgentSelect.appendChild(option);
+      }
     });
   }
   
@@ -704,6 +710,22 @@ function populateAgentDropdowns() {
       option.value = empId;
       option.textContent = emp.name;
       agentQueueFilter.appendChild(option);
+    });
+  }
+
+  // New claim assignee dropdown (exclude current user)
+  const newAssigneeSelect = document.getElementById('newAssignee');
+  if (newAssigneeSelect) {
+    newAssigneeSelect.innerHTML = '<option value="">-- Select Agent --</option>';
+    empIds.forEach(empId => {
+      // Exclude current user from new claim assignment
+      if (empId !== currentUser.odoo_id) {
+        const emp = employeeMap[empId];
+        const option = document.createElement('option');
+        option.value = empId;
+        option.textContent = `${emp.name} (${empId})`;
+        newAssigneeSelect.appendChild(option);
+      }
     });
   }
 }
@@ -1377,13 +1399,14 @@ window.openShareModal = function(claimId) {
     </div>
   `;
   
-  // Build checkboxes for other agents (exclude current owner)
+  // Build checkboxes for other agents (exclude current owner and current user)
   const shareCheckboxes = document.getElementById("shareCheckboxes");
   const currentShares = claim.sharedWith || [];
   
   let checkboxHTML = '';
   Object.keys(employeeMap).forEach(empId => {
-    if (empId !== claim.assignedTo) { // Don't show owner in share list
+    // Don't show owner in share list, and don't show current user to prevent self-sharing
+    if (empId !== claim.assignedTo && empId !== currentUser.odoo_id) {
       const emp = employeeMap[empId];
       const isChecked = currentShares.includes(empId);
       checkboxHTML += `
