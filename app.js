@@ -2173,15 +2173,13 @@ window.generateMyReportingData = function() {
     return workedDate >= startDateObj && workedDate <= endDateObj;
   });
   
-  // Calculate quick stats
+  // Calculate quick stats - Closed Today = only "PAID" status
   const totalClaims = reportClaims.length;
-  const closedClaims = reportClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
-  const pendingClaims = reportClaims.filter(c => c.status === "PENDING").length;
+  const closedClaims = reportClaims.filter(c => c.status === "PAID").length;
   
   // Display quick stats
   document.getElementById('myTotalClaimsCount').textContent = totalClaims;
   document.getElementById('myClosedCount').textContent = closedClaims;
-  document.getElementById('myPendingCount').textContent = pendingClaims;
   
   // Store original data for filtering
   originalReportData = reportClaims;
@@ -2222,16 +2220,12 @@ function displayReportingData(data) {
     return;
   }
   
-  // Calculate stats
-  const closedCount = data.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV").length;
-  const openCount = data.length - closedCount;
-  const totalBalance = data.reduce((sum, claim) => sum + (claim.balance || 0), 0);
+  // Calculate stats - Closed Today = only "PAID" status
+  const closedCount = data.filter(c => c.status === "PAID").length;
   
   // Display stats
   document.getElementById('totalWorkedClaims').textContent = data.length;
   document.getElementById('closedClaimCount').textContent = closedCount;
-  document.getElementById('openClaimCount').textContent = openCount;
-  document.getElementById('reportingTotalBalance').textContent = '$' + totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   statsSection.style.display = 'flex';
   
   // Populate table
