@@ -589,6 +589,18 @@ body {
   transform: rotate(360deg);
 }
 
+/* Header outline buttons - better visibility */
+.header .btn-outline {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.header .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
 /* ==================== ADMIN CONTROLS ==================== */
 .admin-controls {
   max-width: 1400px;
@@ -1304,11 +1316,13 @@ tr.claim-paid td {
   font-size: 1.4rem;
   font-weight: 700;
   line-height: 1;
+  color: var(--text);
 }
 
 .stat-label {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.7;
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -3105,6 +3119,17 @@ tr.selected:hover {
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.reporting-header .btn-outline {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.reporting-header .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .reporting-title {
