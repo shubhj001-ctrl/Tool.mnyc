@@ -722,10 +722,6 @@ body {
   z-index: 1000;
 }
 
-.dropdown:hover .dropdown-menu {
-  display: block;
-}
-
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -3096,13 +3092,13 @@ tr.selected:hover {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .card-table th,
 .card-table td {
   white-space: nowrap;
-  padding: 10px 8px;
+  padding: 10px 6px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
