@@ -568,7 +568,7 @@ function renderEmployeeCards() {
   
   // Get all employees except current user
   const allEmpIds = Object.keys(employeeMap);
-  const empIds = allEmpIds.filter(empId => empId !== currentUser.odoo_id);
+  const empIds = allEmpIds.filter(empId => employeeMap[empId].odoo_id !== currentUser.odoo_id);
   const totalPages = Math.ceil(empIds.length / employeesPerPage);
   
   // Ensure current page is valid
@@ -676,7 +676,7 @@ function populateAgentDropdowns() {
     assignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
     empIds.forEach(empId => {
       // Exclude current user from assignment dropdown
-      if (empId !== currentUser.odoo_id) {
+      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
@@ -692,7 +692,7 @@ function populateAgentDropdowns() {
     bulkAssignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
     empIds.forEach(empId => {
       // Exclude current user from bulk assignment dropdown
-      if (empId !== currentUser.odoo_id) {
+      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
@@ -721,7 +721,7 @@ function populateAgentDropdowns() {
     newAssigneeSelect.innerHTML = '<option value="">-- Select Agent --</option>';
     empIds.forEach(empId => {
       // Exclude current user from new claim assignment
-      if (empId !== currentUser.odoo_id) {
+      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
@@ -1408,7 +1408,7 @@ window.openShareModal = function(claimId) {
   let checkboxHTML = '';
   Object.keys(employeeMap).forEach(empId => {
     // Don't show owner in share list, and don't show current user to prevent self-sharing
-    if (empId !== claim.assignedTo && empId !== currentUser.odoo_id) {
+    if (employeeMap[empId].odoo_id !== claim.assignedTo && employeeMap[empId].odoo_id !== currentUser.odoo_id) {
       const emp = employeeMap[empId];
       const isChecked = currentShares.includes(empId);
       checkboxHTML += `
