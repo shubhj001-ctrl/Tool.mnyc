@@ -655,6 +655,12 @@ window.setAgentQueue = function(queue) {
     }
   }
   
+  // Hide stats container when "All Claims" is selected, show for "My Queue"
+  const statsContainer = document.querySelector(".stats-container");
+  if (statsContainer && currentUser.role !== "admin") {
+    statsContainer.style.display = queue === "all" ? "none" : "flex";
+  }
+  
   render();
 };
 
