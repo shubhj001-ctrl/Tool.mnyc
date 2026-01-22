@@ -1795,7 +1795,7 @@ async function saveWork() {
     return;
   }
   
-  const now = getNowEST(); // Get current time in EST timezone
+  const now = new Date(); // Store actual current UTC time, will convert to EST when displaying
   const followUpDays = parseInt(followUpDaysInput.value) || 14;
   const claim = findClaimById(activeClaimId);
   

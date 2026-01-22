@@ -238,7 +238,7 @@ app.put('/api/users/:id', async (req, res) => {
     if (name) user.name = name;
     if (email !== undefined) user.email = email;
     if (name) user.avatar = name.charAt(0).toUpperCase();
-    user.updatedAt = getNowEST(); // Use EST timezone
+    user.updatedAt = new Date(); // Store actual UTC time
     
     await user.save();
     
@@ -309,7 +309,7 @@ app.post('/api/claims', async (req, res) => {
 // Update claim
 app.put('/api/claims/:id', async (req, res) => {
   try {
-    req.body.updatedAt = getNowEST(); // Use EST timezone
+    req.body.updatedAt = new Date(); // Store actual UTC time
     const claim = await Claim.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!claim) return res.status(404).json({ error: 'Claim not found' });
     res.json(claim);
@@ -352,16 +352,16 @@ app.post('/api/claims/bulk', async (req, res) => {
 // Get agent daily report (claims worked today)
 app.get('/api/reports/agent/daily/:userId', async (req, res) => {
   try {
-    // Get today's date in EST timezone
+    // Get today's date in EST timezone for comparison
+    const estDate = new Date();
     const estFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit',
-      hour12: false
+      day: '2-digit'
     });
     
-    const parts = estFormatter.formatToParts(new Date());
+    const parts = estFormatter.formatToParts(estDate);
     const today = new Date(
       parseInt(parts.find(p => p.type === 'year').value),
       parseInt(parts.find(p => p.type === 'month').value) - 1,
@@ -474,8 +474,20 @@ app.get('/api/reports/admin/claims', async (req, res) => {
       query.status = 'paid';
     } else if (filterType === 'overdue') {
       // Claims where nextFollowUp date has passed (in EST timezone)
-      const today = getNowEST();
-      today.setHours(0, 0, 0, 0);
+      const estDate = new Date();
+      const estFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const parts = estFormatter.formatToParts(estDate);
+      const today = new Date(
+        parseInt(parts.find(p => p.type === 'year').value),
+        parseInt(parts.find(p => p.type === 'month').value) - 1,
+        parseInt(parts.find(p => p.type === 'day').value),
+        0, 0, 0, 0
+      );
       query.nextFollowUp = { $lt: today };
       query.status = { $ne: 'paid' };
     }
