@@ -130,6 +130,10 @@
           <button class="dropdown-item" onclick="addNewClaim()">
             <i class="fas fa-plus"></i> Add Claim
           </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item master-admin-item" id="masterAdminMenuBtn" style="display: none;" onclick="document.getElementById('masterAdminModal').style.display = 'flex'">
+            <i class="fas fa-crown"></i> Master Admin Panel
+          </button>
         </div>
       </div>
     </div>
@@ -960,6 +964,237 @@
     <div class="empty-state" id="emptyReportingState" style="display: none;">
       <i class="fas fa-inbox"></i>
       <p>No claims found for the selected criteria</p>
+    </div>
+  </div>
+</div>
+
+<!-- Master Admin Modal -->
+<div class="modal-backdrop" id="masterAdminModal" style="display: none;">
+  <div class="modal master-admin-modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-crown"></i> Master Admin Panel</h3>
+      <button class="btn-close" onclick="document.getElementById('masterAdminModal').style.display = 'none'">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="master-admin-tabs">
+      <button class="tab-button active" data-tab="master-overview">
+        <i class="fas fa-dashboard"></i> Overview
+      </button>
+      <button class="tab-button" data-tab="master-logs">
+        <i class="fas fa-history"></i> Activity Logs
+      </button>
+      <button class="tab-button" data-tab="master-users">
+        <i class="fas fa-users"></i> User Management
+      </button>
+      <button class="tab-button" data-tab="master-deleted">
+        <i class="fas fa-trash"></i> Deleted Claims
+      </button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div class="tab-content active" id="master-overview">
+      <div class="master-admin-overview">
+        <h4><i class="fas fa-crown"></i> Master Admin Controls</h4>
+        <div class="master-actions-grid">
+          <div class="master-action-card">
+            <i class="fas fa-log-in"></i>
+            <h5>View Activity Logs</h5>
+            <p>Monitor all system activities and user actions</p>
+            <button class="btn btn-primary" onclick="loadActivityLogs()">
+              <i class="fas fa-arrow-right"></i> View Logs
+            </button>
+          </div>
+          <div class="master-action-card">
+            <i class="fas fa-user-plus"></i>
+            <h5>Create Admin User</h5>
+            <p>Create new administrator accounts</p>
+            <button class="btn btn-primary" onclick="document.getElementById('createAdminForm').style.display = document.getElementById('createAdminForm').style.display === 'none' ? 'block' : 'none'">
+              <i class="fas fa-arrow-right"></i> Create Admin
+            </button>
+          </div>
+          <div class="master-action-card">
+            <i class="fas fa-user-secret"></i>
+            <h5>Convert Agent to Admin</h5>
+            <p>Escalate agent privileges to admin level</p>
+            <button class="btn btn-primary" onclick="document.getElementById('convertAgentForm').style.display = document.getElementById('convertAgentForm').style.display === 'none' ? 'block' : 'none'">
+              <i class="fas fa-arrow-right"></i> Convert Agent
+            </button>
+          </div>
+          <div class="master-action-card">
+            <i class="fas fa-recycle"></i>
+            <h5>Restore Deleted Claims</h5>
+            <p>Recover and restore soft-deleted claims</p>
+            <button class="btn btn-primary" onclick="openDeletedClaimsView()">
+              <i class="fas fa-arrow-right"></i> Restore Claims
+            </button>
+          </div>
+        </div>
+
+        <!-- Create Admin Form -->
+        <div id="createAdminForm" style="display: none;" class="master-form">
+          <h4><i class="fas fa-user-plus"></i> Create New Admin User</h4>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="newAdminUsername" placeholder="Enter username" />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="newAdminPassword" placeholder="Enter password" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="newAdminEmail" placeholder="Enter email" />
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="createMasterAdminUser()">
+              <i class="fas fa-save"></i> Create Admin
+            </button>
+            <button class="btn btn-secondary" onclick="document.getElementById('createAdminForm').style.display = 'none'">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+          </div>
+        </div>
+
+        <!-- Convert Agent Form -->
+        <div id="convertAgentForm" style="display: none;" class="master-form">
+          <h4><i class="fas fa-user-secret"></i> Convert Agent to Admin</h4>
+          <div class="form-group">
+            <label>Select Agent</label>
+            <select id="agentToConvert">
+              <option value="">-- Select an Agent --</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="convertAgentToAdmin()">
+              <i class="fas fa-arrow-up"></i> Promote to Admin
+            </button>
+            <button class="btn btn-secondary" onclick="document.getElementById('convertAgentForm').style.display = 'none'">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Logs Tab -->
+    <div class="tab-content" id="master-logs">
+      <div class="master-logs-container">
+        <div class="logs-controls">
+          <input type="text" id="logsSearchInput" placeholder="Search logs..." />
+          <button class="btn btn-primary" onclick="loadActivityLogs()">
+            <i class="fas fa-sync"></i> Refresh
+          </button>
+        </div>
+        <div class="logs-table-wrapper">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Claim #</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="activityLogsTable">
+              <!-- Will be populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyLogsState" style="display: none;">
+          <i class="fas fa-inbox"></i>
+          <p>No activity logs found</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Management Tab -->
+    <div class="tab-content" id="master-users">
+      <div class="master-users-container">
+        <h4><i class="fas fa-users"></i> User Management</h4>
+        <div class="users-table-wrapper">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Current Role</th>
+                <th>Change Role</th>
+              </tr>
+            </thead>
+            <tbody id="usersManagementTable">
+              <!-- Will be populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyUsersState" style="display: none;">
+          <i class="fas fa-inbox"></i>
+          <p>No users found</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deleted Claims Tab -->
+    <div class="tab-content" id="master-deleted">
+      <div class="master-deleted-container">
+        <h4><i class="fas fa-trash"></i> Deleted Claims (Restoration)</h4>
+        <div class="deleted-controls">
+          <input type="text" id="deletedSearchInput" placeholder="Search deleted claims..." />
+          <button class="btn btn-primary" onclick="openDeletedClaimsView()">
+            <i class="fas fa-sync"></i> Refresh
+          </button>
+        </div>
+        <div class="deleted-table-wrapper">
+          <table class="deleted-claims-table">
+            <thead>
+              <tr>
+                <th>Claim #</th>
+                <th>Patient</th>
+                <th>Balance</th>
+                <th>Deleted By</th>
+                <th>Deleted On</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="deletedClaimsTable">
+              <!-- Will be populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyDeletedState" style="display: none;">
+          <i class="fas fa-inbox"></i>
+          <p>No deleted claims found</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('masterAdminModal').style.display = 'none'">
+        <i class="fas fa-times"></i> Close
+      </button>
+    </div>
+  </div>
+</div>
+<!-- Deleted Claims Detail Modal (Shown when restoring) -->
+<div class="modal-backdrop" id="deletedClaimsModal" style="display: none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-recycle"></i> Claim Details</h3>
+      <button class="btn-close" onclick="document.getElementById('deletedClaimsModal').style.display = 'none'">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="deleted-claim-details" id="deletedClaimDetails">
+      <!-- Will be populated when a claim is viewed -->
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('deletedClaimsModal').style.display = 'none'">
+        <i class="fas fa-times"></i> Close
+      </button>
     </div>
   </div>
 </div>

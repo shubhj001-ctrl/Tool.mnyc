@@ -339,18 +339,40 @@ function showApp() {
   
   // Update user info in header
   document.getElementById("userName").textContent = currentUser.name;
-  document.getElementById("userRole").textContent = currentUser.role === "admin" ? "Administrator" : "Agent";
+  let roleText = "Agent";
+  if (currentUser.role === "master") {
+    roleText = "Site Administrator";
+  } else if (currentUser.role === "admin") {
+    roleText = "Administrator";
+  }
+  document.getElementById("userRole").textContent = roleText;
   document.getElementById("userAvatar").textContent = currentUser.avatar;
   document.getElementById("userAvatar").style.background = currentUser.color;
   
   // Show/hide admin controls
   const adminControls = document.getElementById("adminControls");
+  const masterAdminControls = document.getElementById("masterAdminControls");
+  const masterAdminMenuBtn = document.getElementById("masterAdminMenuBtn");
   const agentHeader = document.getElementById("agentHeader");
   const claimsAgentFilter = document.getElementById("claimsAgentFilter");
   const checkboxHeader = document.getElementById("checkboxHeader");
   const adminOnlyCols = document.querySelectorAll(".admin-only-col");
   
-  if (currentUser.role === "admin") {
+  if (currentUser.role === "master") {
+    if (masterAdminControls) masterAdminControls.style.display = "block";
+    if (masterAdminMenuBtn) masterAdminMenuBtn.style.display = "block";
+    adminControls.style.display = "block";
+    agentHeader.style.display = "none";
+    claimsAgentFilter.style.display = "block";
+    document.getElementById("totalLabel").textContent = "All Claims";
+    // Show checkbox column for bulk selection
+    if (checkboxHeader) checkboxHeader.style.display = "table-cell";
+    // Show admin-only columns
+    adminOnlyCols.forEach(col => col.style.display = "table-cell");
+    // Hide profile button
+    document.getElementById("profileBtn").style.display = "none";
+  } else if (currentUser.role === "admin") {
+    if (masterAdminMenuBtn) masterAdminMenuBtn.style.display = "none";
     adminControls.style.display = "block";
     agentHeader.style.display = "none";
     claimsAgentFilter.style.display = "block";
@@ -362,6 +384,7 @@ function showApp() {
     // Hide profile button for admin
     document.getElementById("profileBtn").style.display = "none";
   } else {
+    if (masterAdminMenuBtn) masterAdminMenuBtn.style.display = "none";
     adminControls.style.display = "none";
     agentHeader.style.display = "flex";
     claimsAgentFilter.style.display = "none";
@@ -2079,6 +2102,160 @@ window.saveProfile = async function(event) {
   }
 };
 
+// ==================== MASTER ADMIN FUNCTIONS ====================
+
+window.openMasterAdminPanel = function() {
+  const modal = document.getElementById("masterAdminModal");
+  if (!modal) {
+    showToast("Master admin panel not available", "error");
+    return;
+  }
+  modal.style.display = "flex";
+  loadActivityLogs();
+};
+
+window.closeMasterAdminPanel = function() {
+  const modal = document.getElementById("masterAdminModal");
+  if (modal) modal.style.display = "none";
+};
+
+async function loadActivityLogs() {
+  try {
+    const response = await apiCall(`/api/logs?userRole=${currentUser.role}&limit=50`, 'GET');
+    const logsTable = document.getElementById("activityLogsTable");
+    
+    if (!logsTable) return;
+    
+    logsTable.innerHTML = response.logs.map(log => `
+      <tr>
+        <td>${log.timestamp ? toESTDateTime(new Date(log.timestamp)) : '-'}</td>
+        <td>${log.performedByName || '-'}</td>
+        <td>${log.action}</td>
+        <td>${log.claimNo || '-'}</td>
+        <td>${log.details || '-'}</td>
+      </tr>
+    `).join('');
+    
+    if (response.logs.length === 0) {
+      document.getElementById("emptyLogsState").style.display = 'block';
+    } else {
+      document.getElementById("emptyLogsState").style.display = 'none';
+    }
+  } catch (error) {
+    showToast("Error loading activity logs: " + error.message, "error");
+  }
+}
+
+window.createMasterAdminUser = async function() {
+  const username = document.getElementById("newAdminUsername").value;
+  const password = document.getElementById("newAdminPassword").value;
+  const email = document.getElementById("newAdminEmail").value;
+  
+  if (!username || !password || !email) {
+    showToast("Please fill in all fields", "error");
+    return;
+  }
+  
+  try {
+    await apiCall('/api/users/create-admin', 'POST', {
+      username: username.toLowerCase(),
+      name: username,
+      email: email,
+      password: password,
+      createdByName: currentUser.name,
+      userRole: currentUser.role
+    });
+    
+    showToast(`Admin user "${username}" created successfully!`);
+    document.getElementById("newAdminUsername").value = '';
+    document.getElementById("newAdminPassword").value = '';
+    document.getElementById("newAdminEmail").value = '';
+    document.getElementById("createAdminForm").style.display = 'none';
+    await loadUsers();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+};
+
+window.convertAgentToAdmin = async function() {
+  const select = document.getElementById("agentToConvert");
+  const username = select.value;
+  
+  if (!username) {
+    showToast("Please select an agent", "error");
+    return;
+  }
+  
+  if (!confirm(`Convert ${username} to Admin?`)) return;
+  
+  try {
+    await apiCall(`/api/users/${username.toLowerCase()}/role`, 'PUT', {
+      newRole: 'admin',
+      updatedByName: currentUser.name,
+      userRole: currentUser.role
+    });
+    
+    showToast(`User converted to admin successfully!`);
+    select.value = '';
+    document.getElementById("convertAgentForm").style.display = 'none';
+    await loadUsers();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+};
+
+window.openDeletedClaimsView = async function() {
+  try {
+    const response = await apiCall(`/api/deleted-claims?userRole=${currentUser.role}`, 'GET');
+    const table = document.getElementById("deletedClaimsTable");
+    
+    if (!table) return;
+    
+    if (response.length === 0) {
+      document.getElementById("emptyDeletedState").style.display = 'block';
+      table.innerHTML = '';
+      return;
+    }
+    
+    document.getElementById("emptyDeletedState").style.display = 'none';
+    
+    table.innerHTML = response.map(del => `
+      <tr>
+        <td>${del.claimData.claimNo}</td>
+        <td>${del.claimData.patient}</td>
+        <td>${del.claimData.balance || '$0'}</td>
+        <td>${del.deletedByName}</td>
+        <td>${toESTDateTime(new Date(del.deletedAt))}</td>
+        <td>${del.restoredAt ? '✓ Restored' : `<button class="btn btn-success btn-sm" onclick="restoreDeletedClaim('${del._id}')"><i class="fas fa-redo"></i> Restore</button>`}</td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    showToast("Error loading deleted claims: " + error.message, "error");
+  }
+};
+
+window.restoreDeletedClaim = async function(claimId) {
+  if (!confirm("Restore this claim?")) return;
+  
+  try {
+    await apiCall(`/api/deleted-claims/${claimId}/restore`, 'POST', {
+      restoredByName: currentUser.name,
+      userRole: currentUser.role
+    });
+    
+    showToast("Claim restored successfully!");
+    await openDeletedClaimsView();
+    await loadClaims();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+};
+
+window.closeDeletedClaimsModal = function() {
+  const modal = document.getElementById("deletedClaimsModal");
+  if (modal) modal.style.display = "none";
+};
+
 // ==================== CARD MODAL FUNCTIONS ====================
 window.openCardModal = function(type) {
   const modal = document.getElementById('cardViewModal');
@@ -2598,11 +2775,124 @@ window.exportReportData = function() {
   }
 };
 
+// ==================== MASTER ADMIN TAB SWITCHING ====================
+function setupMasterAdminTabs() {
+  const tabButtons = document.querySelectorAll('.tab-button');
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const tabName = this.dataset.tab;
+      
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Remove active class from all buttons
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Show the selected tab
+      const tabContent = document.getElementById(tabName);
+      if (tabContent) {
+        tabContent.classList.add('active');
+        this.classList.add('active');
+        
+        // Load data for specific tabs
+        if (tabName === 'master-logs') {
+          loadActivityLogs();
+        } else if (tabName === 'master-deleted') {
+          openDeletedClaimsView();
+        } else if (tabName === 'master-users') {
+          loadUsersForManagement();
+        }
+      }
+    });
+  });
+}
+
+async function loadUsersForManagement() {
+  try {
+    const response = await apiCall('/api/users', 'GET');
+    const table = document.getElementById("usersManagementTable");
+    
+    if (!table) return;
+    
+    const users = response.filter(u => u.role !== 'master');
+    
+    if (users.length === 0) {
+      document.getElementById("emptyUsersState").style.display = 'block';
+      table.innerHTML = '';
+      return;
+    }
+    
+    document.getElementById("emptyUsersState").style.display = 'none';
+    
+    // Also populate convert agent dropdown
+    const agentSelect = document.getElementById("agentToConvert");
+    if (agentSelect) {
+      const agents = users.filter(u => u.role === 'agent');
+      agentSelect.innerHTML = '<option value="">-- Select an Agent --</option>' + 
+        agents.map(agent => `<option value="${agent.odoo_id}">${agent.name} (${agent.odoo_id})</option>`).join('');
+    }
+    
+    table.innerHTML = users.map(user => `
+      <tr>
+        <td>${user.name}</td>
+        <td>${user.email || '-'}</td>
+        <td><span style="background: ${user.role === 'admin' ? '#10b981' : '#3b82f6'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">${user.role.toUpperCase()}</span></td>
+        <td>
+          ${user.role === 'agent' ? 
+            `<button class="btn btn-primary btn-sm" onclick="convertAgentToAdmin_Direct('${user.odoo_id}')"><i class="fas fa-arrow-up"></i> Promote</button>` : 
+            `<button class="btn btn-secondary btn-sm" onclick="demoteAdminToAgent('${user.odoo_id}')"><i class="fas fa-arrow-down"></i> Demote</button>`}
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    showToast("Error loading users: " + error.message, "error");
+  }
+}
+
+async function convertAgentToAdmin_Direct(username) {
+  if (!confirm(`Convert ${username} to Admin?`)) return;
+  
+  try {
+    await apiCall(`/api/users/${username}/role`, 'PUT', {
+      newRole: 'admin',
+      updatedByName: currentUser.name,
+      userRole: currentUser.role
+    });
+    
+    showToast(`User converted to admin successfully!`);
+    await loadUsersForManagement();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+async function demoteAdminToAgent(username) {
+  if (!confirm(`Demote ${username} to Agent?`)) return;
+  
+  try {
+    await apiCall(`/api/users/${username}/role`, 'PUT', {
+      newRole: 'agent',
+      updatedByName: currentUser.name,
+      userRole: currentUser.role
+    });
+    
+    showToast(`User demoted to agent successfully!`);
+    await loadUsersForManagement();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
 // ==================== INITIALIZATION ====================
 // Wait for DOM to be ready before initializing
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize all DOM element references
   initDOMElements();
+  
+  // Setup master admin tabs
+  setupMasterAdminTabs();
   
   // Setup dynamic search
   const searchInput = document.getElementById('searchInput');

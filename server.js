@@ -56,12 +56,36 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, default: null },
   password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'agent'], default: 'agent' },
+  role: { type: String, enum: ['master', 'admin', 'agent'], default: 'agent' },
   avatar: String,
   color: String,
   isDefaultPassword: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
+});
+
+// Activity Log Schema
+const activityLogSchema = new mongoose.Schema({
+  action: { type: String, required: true }, // 'edit', 'share', 'delete', 'restore', 'create', 'transfer'
+  claimId: { type: String, default: null },
+  claimNo: { type: String, default: null },
+  performedBy: { type: String, required: true }, // user odoo_id
+  performedByName: { type: String, required: true },
+  details: { type: String, default: null }, // What changed
+  oldValue: { type: String, default: null },
+  newValue: { type: String, default: null },
+  timestamp: { type: Date, default: Date.now },
+  userRole: { type: String, enum: ['master', 'admin', 'agent'] }
+});
+
+// Deleted Claims Schema (for restoration)
+const deletedClaimSchema = new mongoose.Schema({
+  claimData: { type: Object, required: true }, // Full claim data backup
+  deletedBy: { type: String, required: true }, // user odoo_id
+  deletedByName: { type: String, required: true },
+  deletedAt: { type: Date, default: Date.now },
+  restoredAt: { type: Date, default: null },
+  restoredBy: { type: String, default: null }
 });
 
 // Claim Schema
@@ -100,6 +124,34 @@ const claimSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 const Claim = mongoose.model('Claim', claimSchema);
+const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
+const DeletedClaim = mongoose.model('DeletedClaim', deletedClaimSchema);
+
+// Create master admin user if it doesn't exist
+async function createMasterAdmin() {
+  try {
+    const masterExists = await User.findOne({ odoo_id: 'master.mnyc' });
+    if (!masterExists) {
+      const masterUser = new User({
+        odoo_id: 'master.mnyc',
+        name: 'Site Administrator',
+        email: 'admin@mnyc.local',
+        password: 'Shubh@0924',
+        role: 'master',
+        avatar: 'M',
+        color: '#000000',
+        isDefaultPassword: false
+      });
+      await masterUser.save();
+      console.log('✅ Master admin user created successfully');
+    }
+  } catch (error) {
+    console.error('Error creating master admin:', error);
+  }
+}
+
+// Create master admin on startup
+createMasterAdmin();
 
 // ==================== USER ROUTES ====================
 
@@ -139,10 +191,11 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Get all users (for admin)
+// Get all users (for admin/master)
 app.get('/api/users', async (req, res) => {
   try {
-    const users = await User.find({ role: 'agent' }).select('-password');
+    // Don't show master user to anyone except master themselves
+    const users = await User.find({ role: { $in: ['agent', 'admin'] } }).select('-password');
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -321,8 +374,31 @@ app.put('/api/claims/:id', async (req, res) => {
 // Delete claim
 app.delete('/api/claims/:id', async (req, res) => {
   try {
+    const { deletedByName, userRole } = req.query;
+    
     const claim = await Claim.findByIdAndDelete(req.params.id);
     if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    
+    // Save deleted claim for restoration
+    const deletedClaimRecord = new DeletedClaim({
+      claimData: claim.toObject(),
+      deletedBy: deletedByName || 'unknown',
+      deletedByName: deletedByName || 'Unknown User'
+    });
+    await deletedClaimRecord.save();
+    
+    // Log this action
+    const log = new ActivityLog({
+      action: 'delete_claim',
+      claimId: claim._id,
+      claimNo: claim.claimNo,
+      performedBy: deletedByName,
+      performedByName: deletedByName || 'Unknown User',
+      details: `Deleted claim: ${claim.claimNo}`,
+      userRole: userRole || 'admin'
+    });
+    await log.save();
+    
     res.json({ message: 'Claim deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -344,6 +420,254 @@ app.post('/api/claims/bulk', async (req, res) => {
     } else {
       res.status(500).json({ error: error.message });
     }
+  }
+});
+
+// ==================== MASTER ADMIN ROUTES ====================
+
+// Update user role to admin or agent (master only)
+app.put('/api/users/:id/role', async (req, res) => {
+  try {
+    const { newRole, updatedByName, userRole } = req.body;
+    
+    // Only master admin can change roles
+    if (userRole !== 'master') {
+      return res.status(403).json({ error: 'Only master admin can change user roles' });
+    }
+    
+    if (!['admin', 'agent'].includes(newRole)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    
+    const user = await User.findOne({ odoo_id: req.params.id });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const oldRole = user.role;
+    user.role = newRole;
+    await user.save();
+    
+    // Log this action
+    const log = new ActivityLog({
+      action: 'role_change',
+      performedBy: updatedByName,
+      performedByName: 'Master Admin',
+      details: `Changed user ${user.name} role from ${oldRole} to ${newRole}`,
+      oldValue: oldRole,
+      newValue: newRole,
+      userRole: 'master'
+    });
+    await log.save();
+    
+    res.json({ message: 'User role updated successfully', user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create admin user (master only)
+app.post('/api/users/create-admin', async (req, res) => {
+  try {
+    const { username, name, email, password, createdByName, userRole } = req.body;
+    
+    // Only master admin can create admin users
+    if (userRole !== 'master') {
+      return res.status(403).json({ error: 'Only master admin can create admin users' });
+    }
+    
+    if (!username || !name || !password) {
+      return res.status(400).json({ error: 'Username, name, and password are required' });
+    }
+    
+    const existing = await User.findOne({ odoo_id: username.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+    
+    const avatar = name.charAt(0).toUpperCase();
+    const adminCount = await User.countDocuments({ role: 'admin' });
+    const empId = `ADM00${adminCount + 1}`;
+    
+    const user = new User({
+      odoo_id: username.toLowerCase(),
+      name,
+      email: email || null,
+      password,
+      role: 'admin',
+      avatar,
+      color: '#' + Math.floor(Math.random()*16777215).toString(16),
+      isDefaultPassword: true
+    });
+    
+    await user.save();
+    
+    // Log this action
+    const log = new ActivityLog({
+      action: 'create_admin',
+      performedBy: createdByName,
+      performedByName: 'Master Admin',
+      details: `Created new admin user: ${name} (${username})`,
+      newValue: username,
+      userRole: 'master'
+    });
+    await log.save();
+    
+    res.status(201).json({
+      message: 'Admin user created successfully',
+      user: {
+        odoo_id: user.odoo_id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        color: user.color,
+        empId
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get activity logs (master only)
+app.get('/api/logs', async (req, res) => {
+  try {
+    const { userRole, limit = 100, offset = 0, claimNo = null } = req.query;
+    
+    // Only master admin can view logs
+    if (userRole !== 'master') {
+      return res.status(403).json({ error: 'Only master admin can view activity logs' });
+    }
+    
+    const query = {};
+    if (claimNo) {
+      query.claimNo = claimNo;
+    }
+    
+    const logs = await ActivityLog.find(query)
+      .sort({ timestamp: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(offset));
+    
+    const total = await ActivityLog.countDocuments(query);
+    
+    res.json({
+      logs,
+      total,
+      page: Math.floor(parseInt(offset) / parseInt(limit)) + 1
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Edit claim details (master only)
+app.put('/api/claims/:id/edit-details', async (req, res) => {
+  try {
+    const { claimData, editedByName, userRole } = req.body;
+    
+    // Only master admin can edit claim details
+    if (userRole !== 'master') {
+      return res.status(403).json({ error: 'Only master admin can edit claim details' });
+    }
+    
+    const claim = await Claim.findById(req.params.id);
+    if (!claim) {
+      return res.status(404).json({ error: 'Claim not found' });
+    }
+    
+    // Track changes
+    const changes = {};
+    for (const key in claimData) {
+      if (claim[key] !== claimData[key]) {
+        changes[key] = {
+          oldValue: claim[key],
+          newValue: claimData[key]
+        };
+        claim[key] = claimData[key];
+      }
+    }
+    
+    claim.updatedAt = new Date();
+    await claim.save();
+    
+    // Log this action
+    const log = new ActivityLog({
+      action: 'edit_claim_details',
+      claimId: claim._id,
+      claimNo: claim.claimNo,
+      performedBy: editedByName,
+      performedByName: 'Master Admin',
+      details: `Edited claim details: ${JSON.stringify(changes)}`,
+      userRole: 'master'
+    });
+    await log.save();
+    
+    res.json({ message: 'Claim details updated successfully', claim });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get deleted claims (master only)
+app.get('/api/deleted-claims', async (req, res) => {
+  try {
+    const { userRole } = req.query;
+    
+    // Only master admin can view deleted claims
+    if (userRole !== 'master') {
+      return res.status(403).json({ error: 'Only master admin can view deleted claims' });
+    }
+    
+    const deletedClaims = await DeletedClaim.find()
+      .sort({ deletedAt: -1 });
+    
+    res.json(deletedClaims);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Restore deleted claim (master only)
+app.post('/api/deleted-claims/:id/restore', async (req, res) => {
+  try {
+    const { restoredByName, userRole } = req.body;
+    
+    // Only master admin can restore claims
+    if (userRole !== 'master') {
+      return res.status(403).json({ error: 'Only master admin can restore claims' });
+    }
+    
+    const deletedClaim = await DeletedClaim.findById(req.params.id);
+    if (!deletedClaim) {
+      return res.status(404).json({ error: 'Deleted claim not found' });
+    }
+    
+    // Restore the claim
+    const restoredClaim = new Claim(deletedClaim.claimData);
+    await restoredClaim.save();
+    
+    // Update deletion record
+    deletedClaim.restoredAt = new Date();
+    deletedClaim.restoredBy = restoredByName;
+    await deletedClaim.save();
+    
+    // Log this action
+    const log = new ActivityLog({
+      action: 'restore_claim',
+      claimId: restoredClaim._id,
+      claimNo: restoredClaim.claimNo,
+      performedBy: restoredByName,
+      performedByName: 'Master Admin',
+      details: `Restored deleted claim: ${restoredClaim.claimNo}`,
+      userRole: 'master'
+    });
+    await log.save();
+    
+    res.json({ message: 'Claim restored successfully', claim: restoredClaim });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
