@@ -2604,6 +2604,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize all DOM element references
   initDOMElements();
   
+  // Setup dynamic search
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', filterClaims);
+  }
+  
   // Check for existing session on page load
   checkSession();
   
