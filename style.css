@@ -3228,7 +3228,7 @@ tr.selected:hover {
   transform: translateY(-4px);
 }
 
-.stat-label {
+.stat-box .stat-label {
   font-size: 0.85rem;
   font-weight: 600;
   color: #ffffff;
@@ -3236,7 +3236,7 @@ tr.selected:hover {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.stat-number {
+.stat-box .stat-number {
   font-size: 1.8rem;
   font-weight: 700;
   color: #ffffff;
