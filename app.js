@@ -660,11 +660,14 @@ function populateAgentDropdowns() {
     if (firstOption) agentFilter.appendChild(firstOption.cloneNode(true));
     
     empIds.forEach(empId => {
-      const emp = employeeMap[empId];
-      const option = document.createElement('option');
-      option.value = empId;
-      option.textContent = emp.name;
-      agentFilter.appendChild(option);
+      // Exclude current user from agent filter dropdown
+      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
+        const emp = employeeMap[empId];
+        const option = document.createElement('option');
+        option.value = empId;
+        option.textContent = emp.name;
+        agentFilter.appendChild(option);
+      }
     });
     
     if (lastOption) agentFilter.appendChild(lastOption.cloneNode(true));
