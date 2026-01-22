@@ -1320,13 +1320,17 @@ tr.claim-paid td {
 }
 
 .stat-label {
-  font-size: 0.75rem;
-  color: var(--text);
-  opacity: 0.7;
+  font-size: 0.8rem;
+  color: #374151;
+  font-weight: 500;
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .stat-label {
+  color: #d1d5db;
 }
 
 /* Clickable stat cards */
