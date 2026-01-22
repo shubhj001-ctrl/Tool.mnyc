@@ -65,6 +65,40 @@ function getNowEST() {
   return estDate;
 }
 
+/**
+ * Update live clock display
+ */
+function updateLiveClock() {
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+  
+  const istFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+  
+  const now = new Date();
+  const estTime = estFormatter.format(now);
+  const istTime = istFormatter.format(now);
+  
+  const estClockEl = document.getElementById('estClock');
+  const istClockEl = document.getElementById('istClock');
+  
+  if (estClockEl) estClockEl.textContent = estTime;
+  if (istClockEl) istClockEl.textContent = istTime;
+}
+
+// Start live clock updates
+setInterval(updateLiveClock, 1000);
+
 // ==================== THEME MANAGEMENT ====================
 function initTheme() {
   const savedTheme = localStorage.getItem('mnyc_theme') || 'light';

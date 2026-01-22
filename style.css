@@ -523,6 +523,51 @@ body {
   margin: 2px 0 0 0;
 }
 
+/* Live Clock */
+.live-clock {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-content: center;
+  flex: 1;
+  margin: 0 30px;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.clock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.clock-zone {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.clock-time {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: 'Monaco', 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+.clock-separator {
+  opacity: 0.5;
+  font-size: 1.2rem;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+
 .user-info {
   display: flex;
   align-items: center;
