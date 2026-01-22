@@ -11,6 +11,36 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// ==================== EST TIMEZONE UTILITIES ====================
+/**
+ * Get current time in EST timezone
+ */
+function getNowEST() {
+  const now = new Date();
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const parts = estFormatter.formatToParts(now);
+  const estDate = new Date(
+    parseInt(parts.find(p => p.type === 'year').value),
+    parseInt(parts.find(p => p.type === 'month').value) - 1,
+    parseInt(parts.find(p => p.type === 'day').value),
+    parseInt(parts.find(p => p.type === 'hour').value),
+    parseInt(parts.find(p => p.type === 'minute').value),
+    parseInt(parts.find(p => p.type === 'second').value)
+  );
+  
+  return estDate;
+}
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mnyc_claims';
 
@@ -208,7 +238,7 @@ app.put('/api/users/:id', async (req, res) => {
     if (name) user.name = name;
     if (email !== undefined) user.email = email;
     if (name) user.avatar = name.charAt(0).toUpperCase();
-    user.updatedAt = new Date();
+    user.updatedAt = getNowEST(); // Use EST timezone
     
     await user.save();
     
@@ -279,7 +309,7 @@ app.post('/api/claims', async (req, res) => {
 // Update claim
 app.put('/api/claims/:id', async (req, res) => {
   try {
-    req.body.updatedAt = new Date();
+    req.body.updatedAt = getNowEST(); // Use EST timezone
     const claim = await Claim.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!claim) return res.status(404).json({ error: 'Claim not found' });
     res.json(claim);
@@ -322,8 +352,23 @@ app.post('/api/claims/bulk', async (req, res) => {
 // Get agent daily report (claims worked today)
 app.get('/api/reports/agent/daily/:userId', async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Get today's date in EST timezone
+    const estFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour12: false
+    });
+    
+    const parts = estFormatter.formatToParts(new Date());
+    const today = new Date(
+      parseInt(parts.find(p => p.type === 'year').value),
+      parseInt(parts.find(p => p.type === 'month').value) - 1,
+      parseInt(parts.find(p => p.type === 'day').value),
+      0, 0, 0, 0
+    );
+    
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
@@ -428,8 +473,9 @@ app.get('/api/reports/admin/claims', async (req, res) => {
       // Claims with paid status
       query.status = 'paid';
     } else if (filterType === 'overdue') {
-      // Claims where nextFollowUp date has passed
-      const today = new Date();
+      // Claims where nextFollowUp date has passed (in EST timezone)
+      const today = getNowEST();
+      today.setHours(0, 0, 0, 0);
       query.nextFollowUp = { $lt: today };
       query.status = { $ne: 'paid' };
     }

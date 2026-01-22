@@ -1,6 +1,70 @@
 // ==================== API BASE URL ====================
 const API_BASE = window.location.origin;
 
+// ==================== EST TIMEZONE UTILITIES ====================
+/**
+ * Convert a date/timestamp to EST timezone and format as MM/DD/YY
+ */
+function toESTDate(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  return estFormatter.format(d);
+}
+
+/**
+ * Convert a date/timestamp to EST timezone and format as MM/DD/YY HH:MM:SS
+ */
+function toESTDateTime(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  return estFormatter.format(d);
+}
+
+/**
+ * Get current time in EST timezone
+ */
+function getNowEST() {
+  const now = new Date();
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const parts = estFormatter.formatToParts(now);
+  const estDate = new Date(
+    parseInt(parts.find(p => p.type === 'year').value),
+    parseInt(parts.find(p => p.type === 'month').value) - 1,
+    parseInt(parts.find(p => p.type === 'day').value),
+    parseInt(parts.find(p => p.type === 'hour').value),
+    parseInt(parts.find(p => p.type === 'minute').value),
+    parseInt(parts.find(p => p.type === 'second').value)
+  );
+  
+  return estDate;
+}
+
 // ==================== THEME MANAGEMENT ====================
 function initTheme() {
   const savedTheme = localStorage.getItem('mnyc_theme') || 'light';
@@ -316,7 +380,7 @@ function calculateNextFollowUp(dateWorked, days) {
 
 function getDueClass(nextDate, status) {
   if (!nextDate || status === "PAID") return "";
-  const today = new Date();
+  const today = getNowEST(); // Use EST timezone
   today.setHours(0, 0, 0, 0);
   const next = new Date(nextDate);
   next.setHours(0, 0, 0, 0);
@@ -590,7 +654,7 @@ function populateAgentDropdowns() {
 function updateEmployeeStats() {
   if (!currentUser || currentUser.role !== "admin") return;
   
-  const today = new Date();
+  const today = getNowEST(); // Use EST timezone
   today.setHours(0, 0, 0, 0);
   
   Object.keys(employeeMap).forEach(empId => {
@@ -785,8 +849,8 @@ function render() {
       <td>${getPriorityBadge(c.priority)}</td>
       <td>${getAssignedBadge(c.assignedTo)}${sharedIndicator}</td>
       <td>${getStatusBadge(c.status)}</td>
-      <td>${c.dateWorked ? new Date(c.dateWorked).toLocaleDateString() : "-"}</td>
-      <td>${c.nextFollowUp ? new Date(c.nextFollowUp).toLocaleDateString() : "-"}</td>
+      <td>${c.dateWorked ? toESTDate(c.dateWorked) : "-"}</td>
+      <td>${c.nextFollowUp ? toESTDate(c.nextFollowUp) : "-"}</td>
       <td>
         <span class="history-count" onclick="openHistoryModal('${claimId}')" title="View history">
           <i class="fas fa-history"></i> ${historyCount}
@@ -982,7 +1046,7 @@ window.openHistoryModal = function(claimId) {
     historyTimeline.innerHTML = history.map((h, i) => `
       <div class="history-item">
         <div class="history-date">
-          <i class="fas fa-calendar"></i> ${new Date(h.dateWorked).toLocaleString()}
+          <i class="fas fa-calendar"></i> ${toESTDateTime(h.dateWorked)}
         </div>
         <div class="history-content">
           <div class="history-badges">
@@ -991,7 +1055,7 @@ window.openHistoryModal = function(claimId) {
           </div>
           <p class="history-remarks">${h.remarks}</p>
           <div class="history-meta">
-            <span><i class="fas fa-calendar-check"></i> Follow-up: ${h.nextFollowUp ? new Date(h.nextFollowUp).toLocaleDateString() : 'N/A'}</span>
+            <span><i class="fas fa-calendar-check"></i> Follow-up: ${h.nextFollowUp ? toESTDate(h.nextFollowUp) : 'N/A'}</span>
             <span class="history-worker"><i class="fas fa-user"></i> By: ${h.workedBy || 'Unknown'}</span>
           </div>
         </div>
@@ -1009,8 +1073,7 @@ window.closeHistoryModal = function() {
 // ==================== DETAIL MODAL FUNCTIONS ====================
 function formatDate(date) {
   if (!date) return '-';
-  const d = new Date(date);
-  return d.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+  return toESTDate(date); // MM/DD/YY format in EST timezone
 }
 
 window.openDetailModal = function(claimId) {
@@ -1090,11 +1153,11 @@ window.openDetailModal = function(claimId) {
       <div class="detail-grid">
         <div class="detail-item">
           <label>Last Worked</label>
-          <div class="value">${claim.dateWorked ? new Date(claim.dateWorked).toLocaleString() : '-'}</div>
+          <div class="value">${claim.dateWorked ? toESTDateTime(claim.dateWorked) : '-'}</div>
         </div>
         <div class="detail-item">
           <label>Next Follow-up</label>
-          <div class="value">${claim.nextFollowUp ? new Date(claim.nextFollowUp).toLocaleDateString() : '-'}</div>
+          <div class="value">${claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-'}</div>
         </div>
         <div class="detail-item full-width">
           <label>Work History</label>
@@ -1533,7 +1596,8 @@ window.exportData = function() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `mnyc_claims_${currentUser.name}_${new Date().toISOString().split('T')[0]}.json`;
+  const estDate = toESTDate(new Date()).replace(/\//g, '-'); // Convert to YYYY-MM-DD format for filename
+  a.download = `mnyc_claims_${currentUser.name}_${estDate}.json`;
   a.click();
   URL.revokeObjectURL(url);
   showToast("Data exported successfully!");
@@ -1697,7 +1761,7 @@ async function saveWork() {
     return;
   }
   
-  const now = new Date();
+  const now = getNowEST(); // Get current time in EST timezone
   const followUpDays = parseInt(followUpDaysInput.value) || 14;
   const claim = findClaimById(activeClaimId);
   
@@ -2022,7 +2086,7 @@ function populateCardModal(type) {
   const emptyState = document.getElementById('emptyCardState');
   const tableBody = document.getElementById('cardTableBody');
   
-  const today = new Date();
+  const today = getNowEST(); // Use EST timezone
   today.setHours(0, 0, 0, 0);
   
   let filteredClaims = [];
@@ -2100,7 +2164,15 @@ window.openAgentReporting = function() {
   populateAgentDropdown();
   
   // Set default dates
-  const today = new Date().toISOString().split('T')[0];
+  const estDate = new Date();
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const parts = estFormatter.formatToParts(estDate);
+  const today = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
   document.getElementById('reportingStartDate').value = today;
   document.getElementById('reportingEndDate').value = today;
   
@@ -2129,7 +2201,15 @@ window.openMyReporting = function() {
   reportingSection.style.display = 'block';
   
   // Set default dates
-  const today = new Date().toISOString().split('T')[0];
+  const estDate = new Date();
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const parts = estFormatter.formatToParts(estDate);
+  const today = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
   document.getElementById('myReportingStartDate').value = today;
   document.getElementById('myReportingEndDate').value = today;
   
@@ -2297,7 +2377,15 @@ window.openReportingModal = async function(reportType) {
   }
   
   // Set default dates to today
-  const today = new Date().toISOString().split('T')[0];
+  const estDate = new Date();
+  const estFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const parts = estFormatter.formatToParts(estDate);
+  const today = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
   document.getElementById('reportStartDate').value = today;
   document.getElementById('reportEndDate').value = today;
   
@@ -2463,7 +2551,7 @@ window.exportReportData = function() {
     const url = URL.createObjectURL(blob);
     
     link.setAttribute('href', url);
-    link.setAttribute('download', `Report_${new Date().toLocaleDateString()}.csv`);
+    link.setAttribute('download', `Report_${toESTDate(new Date())}.csv`);
     link.style.visibility = 'hidden';
     
     document.body.appendChild(link);
