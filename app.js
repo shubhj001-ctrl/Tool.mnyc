@@ -252,6 +252,19 @@ let allUsers = [];
 async function loadUsers() {
   try {
     allUsers = await apiCall('/api/users');
+    
+    // Check if any users need empId migration
+    const needsMigration = allUsers.some(u => !u.empId);
+    if (needsMigration) {
+      try {
+        await apiCall('/api/users/migrate-empids', 'POST');
+        // Reload users after migration
+        allUsers = await apiCall('/api/users');
+      } catch (migrationError) {
+        console.error('EmpId migration failed:', migrationError);
+      }
+    }
+    
     updateEmployeeMap();
     populateAgentDropdowns();
     renderEmployeeCards();
@@ -262,9 +275,13 @@ async function loadUsers() {
 
 // Update employeeMap dynamically from database
 function updateEmployeeMap() {
-  // Clear and rebuild employeeMap from loaded users
+  // Clear existing employeeMap entries
+  Object.keys(employeeMap).forEach(key => delete employeeMap[key]);
+  
+  // Rebuild employeeMap from loaded users using stored empId
   allUsers.forEach((user, index) => {
-    const empId = `EMP00${index + 1}`;
+    // Use stored empId from database, fallback to generated one for legacy users
+    const empId = user.empId || `EMP${String(index + 1).padStart(3, '0')}`;
     employeeMap[empId] = {
       name: user.name,
       avatar: user.avatar,
@@ -302,12 +319,12 @@ window.handleLogin = async function() {
     // Load users first to get proper mapping
     await loadUsers();
     
-    // Map user id dynamically based on role
+    // Map user id based on role - use stored empId for agents
     if (currentUser.role === 'admin') {
       currentUser.id = 'ADMIN001';
     } else {
-      const userIndex = allUsers.findIndex(u => u.odoo_id === currentUser.odoo_id);
-      currentUser.id = userIndex >= 0 ? `EMP00${userIndex + 1}` : `EMP001`;
+      // Use empId from the user record (returned from login API)
+      currentUser.id = currentUser.empId || 'EMP001';
     }
     
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
@@ -586,7 +603,6 @@ function renderEmployeeCards() {
         <div class="employee-avatar" style="background: ${emp.color};">${emp.avatar}</div>
         <div class="employee-info">
           <h4>${emp.name}</h4>
-          <span class="employee-id">${empId}</span>
         </div>
         <div class="employee-stats">
           <div class="emp-stat">
@@ -1374,12 +1390,29 @@ window.toggleActionDropdown = function(claimId) {
 window.closeAllDropdowns = function() {
   const dropdowns = document.querySelectorAll('.action-dropdown-menu');
   dropdowns.forEach(d => d.classList.remove('show'));
+  // Also close the More dropdown
+  const moreDropdown = document.getElementById('moreDropdown');
+  if (moreDropdown) moreDropdown.classList.remove('show');
+};
+
+// Toggle More dropdown in admin controls
+window.toggleMoreDropdown = function(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('moreDropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('show');
+  }
 };
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.action-dropdown')) {
     closeAllDropdowns();
+  }
+  // Close More dropdown when clicking outside
+  if (!e.target.closest('#moreDropdown')) {
+    const moreDropdown = document.getElementById('moreDropdown');
+    if (moreDropdown) moreDropdown.classList.remove('show');
   }
 });
 
