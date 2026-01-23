@@ -535,13 +535,13 @@ function formatCurrency(amount) {
 function updateStats() {
   let relevantClaims = claims;
   
-  // If agent, only show their claims (with backward compatibility)
+  // If agent, only show their claims
   if (currentUser && currentUser.role === "agent") {
     const normalizedCurrentId = normalizeAgentId(currentUser.id);
     relevantClaims = claims.filter(c => normalizeAgentId(c.assignedTo) === normalizedCurrentId);
   }
   
-  const today = new Date();
+  const today = getNowEST(); // Use EST timezone for consistency
   today.setHours(0, 0, 0, 0);
   
   let total, pending, paid, overdue;
@@ -2546,14 +2546,21 @@ function populateCardModal(type) {
   const today = getNowEST(); // Use EST timezone
   today.setHours(0, 0, 0, 0);
   
+  // For agents, only show their claims; for admins, show all claims
+  let relevantClaims = claims;
+  if (currentUser && currentUser.role === "agent") {
+    const normalizedCurrentId = normalizeAgentId(currentUser.id);
+    relevantClaims = claims.filter(c => normalizeAgentId(c.assignedTo) === normalizedCurrentId);
+  }
+  
   let filteredClaims = [];
   
   if (type === 'pending') {
-    filteredClaims = claims.filter(c => c.dateWorked === null && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV");
+    filteredClaims = relevantClaims.filter(c => c.dateWorked === null && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV");
   } else if (type === 'paid') {
-    filteredClaims = claims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
+    filteredClaims = relevantClaims.filter(c => c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV");
   } else if (type === 'overdue') {
-    filteredClaims = claims.filter(c => {
+    filteredClaims = relevantClaims.filter(c => {
       if (!c.nextFollowUp) return false;
       const next = new Date(c.nextFollowUp);
       next.setHours(0, 0, 0, 0);
