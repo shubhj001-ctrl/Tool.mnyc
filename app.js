@@ -273,11 +273,10 @@ async function loadUsers() {
 }
 
 // Update employeeMap dynamically from database
+// Use ONLY odoo_id as the unique identifier
 function updateEmployeeMap() {
   // Clear and rebuild employeeMap from loaded users
-  // Use odoo_id as the key for consistency instead of index-based IDs
-  allUsers.forEach((user, index) => {
-    // Add mapping by odoo_id (new format)
+  allUsers.forEach((user) => {
     employeeMap[user.odoo_id] = {
       name: user.name,
       avatar: user.avatar,
@@ -285,44 +284,16 @@ function updateEmployeeMap() {
       odoo_id: user.odoo_id,
       email: user.email
     };
-    
-    // Also add legacy EMP mapping for backward compatibility with existing data
-    const legacyEmpId = `EMP${String(index + 1).padStart(3, '0')}`;
-    if (!employeeMap[legacyEmpId]) {
-      employeeMap[legacyEmpId] = employeeMap[user.odoo_id];
-    }
   });
 }
 
 // ==================== AUTHENTICATION ====================
 
-// Helper function to normalize IDs for backward compatibility
-// Maps both EMP001 format and odoo_id to a consistent identifier
+// Helper function to normalize case for IDs (odoo_id should be lowercase)
 function normalizeAgentId(agentId) {
   if (!agentId) return null;
-  
-  // If it's already in odoo_id format (found in employeeMap directly), return as-is
-  if (employeeMap[agentId] && employeeMap[agentId].odoo_id) {
-    const normalized = employeeMap[agentId].odoo_id;
-    // Debug: log unusual normalizations
-    if (agentId !== normalized) {
-      console.log(`[NORMALIZE] Mapped ${agentId} -> ${normalized}`);
-    }
-    return normalized;
-  }
-  
-  // Try case-insensitive lookup for odoo_ids (they're usually lowercase)
-  const lowerCaseId = String(agentId).toLowerCase();
-  for (const [key, emp] of Object.entries(employeeMap)) {
-    if (emp.odoo_id && emp.odoo_id.toLowerCase() === lowerCaseId) {
-      console.log(`[NORMALIZE] Case-insensitive: ${agentId} -> ${emp.odoo_id}`);
-      return emp.odoo_id;
-    }
-  }
-  
-  // Return the ID as-is if not found
-  console.warn(`[NORMALIZE] ID not found in employeeMap: ${agentId}`);
-  return agentId;
+  // Simply return lowercase version - odoo_id is always lowercase
+  return String(agentId).toLowerCase();
 }
 
 window.handleLogin = async function() {
@@ -616,20 +587,13 @@ function renderEmployeeCards() {
   const container = document.getElementById('employeeCardsContainer');
   if (!container) return;
   
-  // Get unique employees by odoo_id (avoid duplicates from both EMP001 and odoo_id formats)
-  const seenOdooIds = new Set();
-  const uniqueEmpIds = [];
-  
-  Object.keys(employeeMap).forEach(empId => {
-    const odooId = employeeMap[empId].odoo_id;
-    if (!seenOdooIds.has(odooId) && odooId !== currentUser.odoo_id) {
-      seenOdooIds.add(odooId);
-      uniqueEmpIds.push(empId); // Use the actual empId from map, which will be odoo_id now
-    }
-  });
+  // Get all unique employees (only odoo_id format now)
+  const allEmpIds = Object.keys(employeeMap).filter(empId => 
+    empId !== currentUser.odoo_id // Exclude current user
+  );
   
   // Add "UNASSIGNED" as a special key at the end
-  const displayIds = [...uniqueEmpIds, 'UNASSIGNED'];
+  const displayIds = [...allEmpIds, 'UNASSIGNED'];
   
   const totalPages = Math.ceil(displayIds.length / employeesPerPage);
   
@@ -789,17 +753,8 @@ window.goToEmployeePage = function(page) {
 };
 
 function populateAgentDropdowns() {
-  // Get unique employees by odoo_id to avoid duplicates
-  const seenOdooIds = new Set();
-  const uniqueEmpIds = [];
-  
-  Object.keys(employeeMap).forEach(empId => {
-    const odooId = employeeMap[empId].odoo_id;
-    if (!seenOdooIds.has(odooId)) {
-      seenOdooIds.add(odooId);
-      uniqueEmpIds.push(empId);
-    }
-  });
+  // Get all unique employees (only odoo_id format)
+  const uniqueEmpIds = Object.keys(employeeMap);
   
   // Agent filter dropdowns (both hidden and visible) - #agentFilter and #claimsAgentFilter
   document.querySelectorAll('#agentFilter, #claimsAgentFilter').forEach(agentFilter => {
@@ -811,7 +766,7 @@ function populateAgentDropdowns() {
     
     uniqueEmpIds.forEach(empId => {
       // Exclude current user from agent filter dropdown
-      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
+      if (empId !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
@@ -829,7 +784,7 @@ function populateAgentDropdowns() {
     assignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
     uniqueEmpIds.forEach(empId => {
       // Exclude current user from assignment dropdown
-      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
+      if (empId !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
@@ -853,7 +808,7 @@ function populateAgentDropdowns() {
     }
     uniqueEmpIds.forEach(empId => {
       // Exclude current user from bulk assignment dropdown
-      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
+      if (empId !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
@@ -882,7 +837,7 @@ function populateAgentDropdowns() {
     newAssigneeSelect.innerHTML = '<option value="">-- Select Agent --</option>';
     uniqueEmpIds.forEach(empId => {
       // Exclude current user from new claim assignment
-      if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
+      if (empId !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
@@ -899,14 +854,11 @@ function updateEmployeeStats() {
   const today = getNowEST(); // Use EST timezone
   today.setHours(0, 0, 0, 0);
   
-  // Update stats for each employee
+  // Update stats for each employee (only odoo_id format now)
   Object.keys(employeeMap).forEach(empId => {
-    // Only process if this is a unique employee (use odoo_id to avoid duplicates)
-    if (employeeMap[empId].odoo_id !== empId) return; // Skip if this is a legacy EMP ID alias
-    
     const empClaims = claims.filter(c => {
       const normalizedAssigned = normalizeAgentId(c.assignedTo);
-      return normalizedAssigned === employeeMap[empId].odoo_id;
+      return normalizedAssigned === empId.toLowerCase();
     });
     const total = empClaims.length;
     const overdue = empClaims.filter(c => {
@@ -1005,12 +957,6 @@ function getFilteredClaims() {
   
   const agentQueueFilter = document.getElementById("agentQueueFilter")?.value || "all";
   
-  // Debug logging for agents
-  if (currentUser && currentUser.role === "agent") {
-    console.log(`[AGENT DEBUG] currentUser.id=${currentUser.id}, currentUser.odoo_id=${currentUser.odoo_id}, agentQueue=${agentQueue}, totalClaims=${claims.length}`);
-    console.log(`[AGENT DEBUG] employeeMap keys:`, Object.keys(employeeMap));
-  }
-  
   return claims.filter((c, i) => {
     // Search filter
     const matchesSearch = !searchTerm || 
@@ -1029,7 +975,7 @@ function getFilteredClaims() {
         matchesAgent = normalizeAgentId(c.assignedTo) === agentFilter;
       }
     } else {
-      // Agent queue logic - normalize IDs for backward compatibility
+      // Agent queue logic - all IDs are now odoo_id (lowercase)
       const normalizedCurrentId = normalizeAgentId(currentUser.id);
       const normalizedAssignedTo = normalizeAgentId(c.assignedTo);
       
@@ -1037,11 +983,6 @@ function getFilteredClaims() {
       const isSharedWithMe = c.sharedWith && c.sharedWith.some(sharedId => 
         normalizeAgentId(sharedId) === normalizedCurrentId
       );
-      
-      // Debug first claim for agents
-      if (i === 0 && agentQueue === "my") {
-        console.log(`[AGENT DEBUG] Claim ${c.claimNo}: assignedTo="${c.assignedTo}", normalized="${normalizedAssignedTo}", currentId="${normalizedCurrentId}", isOwner=${isOwner}`);
-      }
       
       if (agentQueue === "my") {
         matchesAgent = isOwner;
