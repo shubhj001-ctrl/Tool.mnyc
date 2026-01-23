@@ -722,6 +722,11 @@ body {
   z-index: 1000;
 }
 
+.dropdown:hover .dropdown-menu,
+.dropdown.show .dropdown-menu {
+  display: block;
+}
+
 .dropdown-item {
   display: flex;
   align-items: center;

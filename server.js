@@ -322,6 +322,105 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
+// Migrate existing users to have empId (one-time migration)
+app.post('/api/users/migrate-empids', async (req, res) => {
+  try {
+    // Get all agents without empId, sorted by creation date
+    const usersWithoutEmpId = await User.find({ 
+      role: 'agent', 
+      $or: [{ empId: { $exists: false } }, { empId: null }]
+    }).sort({ createdAt: 1 });
+    
+    if (usersWithoutEmpId.length === 0) {
+      return res.json({ message: 'All users already have empIds', migrated: 0 });
+    }
+    
+    // Find highest existing empId
+    const lastAgent = await User.findOne({ role: 'agent', empId: { $exists: true, $ne: null } })
+      .sort({ empId: -1 })
+      .limit(1);
+    
+    let nextEmpNum = 1;
+    if (lastAgent && lastAgent.empId) {
+      const lastNum = parseInt(lastAgent.empId.replace('EMP', ''), 10);
+      if (!isNaN(lastNum)) nextEmpNum = lastNum + 1;
+    }
+    
+    // Assign empIds to users without one
+    for (const user of usersWithoutEmpId) {
+      const empId = `EMP${String(nextEmpNum).padStart(3, '0')}`;
+      await User.updateOne({ _id: user._id }, { $set: { empId } });
+      nextEmpNum++;
+    }
+    
+    res.json({ 
+      message: 'Migration completed', 
+      migrated: usersWithoutEmpId.length 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug endpoint to check current user empIds and claim assignments
+app.get('/api/debug/assignments', async (req, res) => {
+  try {
+    const users = await User.find({ role: 'agent' }).select('odoo_id name empId createdAt').sort({ createdAt: 1 });
+    const claimsByAssignee = await Claim.aggregate([
+      { $group: { _id: '$assignedTo', count: { $sum: 1 } } }
+    ]);
+    
+    res.json({
+      users: users.map(u => ({
+        odoo_id: u.odoo_id,
+        name: u.name,
+        empId: u.empId,
+        createdAt: u.createdAt
+      })),
+      claimAssignments: claimsByAssignee
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fix user empIds to match the original order (admin endpoint)
+app.post('/api/users/fix-empids', async (req, res) => {
+  try {
+    // Define the correct empId mapping based on original system
+    const correctMapping = {
+      'ravi': 'EMP001',
+      'shubham': 'EMP002', 
+      'harsh': 'EMP003',
+      'baby singh': 'EMP004',
+      'babysingh': 'EMP004'
+    };
+    
+    const updates = [];
+    const agents = await User.find({ role: 'agent' });
+    
+    for (const agent of agents) {
+      const nameLower = agent.name.toLowerCase();
+      const odooIdLower = agent.odoo_id.toLowerCase();
+      
+      // Try to find correct empId by name or odoo_id
+      let correctEmpId = correctMapping[nameLower] || correctMapping[odooIdLower];
+      
+      if (correctEmpId && agent.empId !== correctEmpId) {
+        await User.updateOne({ _id: agent._id }, { $set: { empId: correctEmpId } });
+        updates.push({ name: agent.name, oldEmpId: agent.empId, newEmpId: correctEmpId });
+      }
+    }
+    
+    res.json({
+      message: 'EmpIds fixed',
+      updates
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ==================== CLAIM ROUTES ====================
 
 // Get all claims

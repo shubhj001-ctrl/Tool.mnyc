@@ -253,11 +253,13 @@ async function loadUsers() {
   try {
     allUsers = await apiCall('/api/users');
     
-    // Check if any users need empId migration
+    // Check if any users need empId migration or fix
     const needsMigration = allUsers.some(u => !u.empId);
     if (needsMigration) {
       try {
         await apiCall('/api/users/migrate-empids', 'POST');
+        // Also run the fix to ensure correct empIds
+        await apiCall('/api/users/fix-empids', 'POST');
         // Reload users after migration
         allUsers = await apiCall('/api/users');
       } catch (migrationError) {
@@ -2207,6 +2209,30 @@ async function loadActivityLogs() {
   }
 }
 
+// Fix employee IDs to match original assignments
+window.fixEmployeeIds = async function() {
+  if (!confirm('This will fix employee ID mappings to match the original assignments (Ravi=EMP001, Shubham=EMP002, Harsh=EMP003, baby singh=EMP004). Continue?')) {
+    return;
+  }
+  
+  try {
+    const result = await apiCall('/api/users/fix-empids', 'POST');
+    
+    if (result.updates && result.updates.length > 0) {
+      const updateList = result.updates.map(u => `${u.name}: ${u.oldEmpId} → ${u.newEmpId}`).join('\n');
+      showToast(`EmpIds fixed!\n${updateList}`);
+    } else {
+      showToast('All empIds are already correct');
+    }
+    
+    // Reload users to update the employeeMap
+    await loadUsers();
+    await loadClaims();
+  } catch (error) {
+    showToast('Failed to fix empIds: ' + error.message, 'error');
+  }
+};
+
 window.createMasterAdminUser = async function() {
   const username = document.getElementById("newAdminUsername").value;
   const password = document.getElementById("newAdminPassword").value;
@@ -2387,7 +2413,9 @@ function populateCardModal(type) {
     const row = document.createElement('tr');
     const status = claim.status || '-';
     const nextFollowUp = claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-';
-    const assignedTo = claim.assignedTo || 'Unassigned';
+    // Convert empId to employee name
+    const assignedToId = claim.assignedTo || '';
+    const assignedToName = assignedToId && employeeMap[assignedToId] ? employeeMap[assignedToId].name : (assignedToId || 'Unassigned');
     const priority = claim.priority || '-';
     
     let extraCellContent = '';
@@ -2402,7 +2430,7 @@ function populateCardModal(type) {
       <td>${claim.patient}</td>
       <td>$${(claim.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td>${priority}</td>
-      <td>${assignedTo}</td>
+      <td>${assignedToName}</td>
       ${extraCellContent}
     `;
     tableBody.appendChild(row);
@@ -2592,7 +2620,8 @@ function displayReportingData(data) {
     const row = document.createElement('tr');
     const dateWorked = claim.dateWorked ? toESTDate(claim.dateWorked) : '-';
     const nextFollowUp = claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-';
-    const assignedTo = claim.assignedTo || 'Unassigned';
+    const assignedToId = claim.assignedTo || '';
+    const assignedTo = assignedToId && employeeMap[assignedToId] ? employeeMap[assignedToId].name : (assignedToId || 'Unassigned');
     const status = claim.status || '-';
     const priority = claim.priority || '-';
     
@@ -2773,7 +2802,8 @@ function displayReportData(data, startDate, endDate) {
     const row = document.createElement('tr');
     const dateWorked = claim.dateWorked ? toESTDate(claim.dateWorked) : '-';
     const nextFollowUp = claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-';
-    const assignedTo = claim.assignedTo || 'Unassigned';
+    const assignedToId = claim.assignedTo || '';
+    const assignedTo = assignedToId && employeeMap[assignedToId] ? employeeMap[assignedToId].name : (assignedToId || 'Unassigned');
     const status = claim.status || '-';
     
     row.innerHTML = `
@@ -2801,15 +2831,19 @@ window.exportReportData = function() {
   try {
     // Prepare CSV data
     const headers = ['Claim #', 'Patient', 'Balance', 'Status', 'Assigned To', 'Date Worked', 'Next Follow-Up'];
-    const rows = currentReportData.map(claim => [
-      claim.claimNo,
-      claim.patient,
-      claim.balance || 0,
-      claim.status || '-',
-      claim.assignedTo || 'Unassigned',
-      claim.dateWorked ? toESTDate(claim.dateWorked) : '-',
-      claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-'
-    ]);
+    const rows = currentReportData.map(claim => {
+      const assignedToId = claim.assignedTo || '';
+      const assignedTo = assignedToId && employeeMap[assignedToId] ? employeeMap[assignedToId].name : (assignedToId || 'Unassigned');
+      return [
+        claim.claimNo,
+        claim.patient,
+        claim.balance || 0,
+        claim.status || '-',
+        assignedTo,
+        claim.dateWorked ? toESTDate(claim.dateWorked) : '-',
+        claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : '-'
+      ];
+    });
     
     // Create CSV content
     let csv = headers.join(',') + '\n';
