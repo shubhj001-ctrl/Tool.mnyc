@@ -303,10 +303,16 @@ function normalizeAgentId(agentId) {
   
   // If it's already in odoo_id format (found in employeeMap directly), return as-is
   if (employeeMap[agentId] && employeeMap[agentId].odoo_id) {
-    return employeeMap[agentId].odoo_id;
+    const normalized = employeeMap[agentId].odoo_id;
+    // Debug: log unusual normalizations
+    if (agentId !== normalized) {
+      console.log(`[NORMALIZE] Mapped ${agentId} -> ${normalized}`);
+    }
+    return normalized;
   }
   
   // Return the ID as-is if not found
+  console.warn(`[NORMALIZE] ID not found in employeeMap: ${agentId}`);
   return agentId;
 }
 
@@ -972,6 +978,11 @@ function getFilteredClaims() {
   
   const agentQueueFilter = document.getElementById("agentQueueFilter")?.value || "all";
   
+  // Debug logging for agents
+  if (currentUser && currentUser.role === "agent") {
+    console.log(`[AGENT DEBUG] currentUser.id=${currentUser.id}, agentQueue=${agentQueue}, totalClaims=${claims.length}`);
+  }
+  
   return claims.filter((c, i) => {
     // Search filter
     const matchesSearch = !searchTerm || 
@@ -998,6 +1009,11 @@ function getFilteredClaims() {
       const isSharedWithMe = c.sharedWith && c.sharedWith.some(sharedId => 
         normalizeAgentId(sharedId) === normalizedCurrentId
       );
+      
+      // Debug first claim for agents
+      if (i === 0 && agentQueue === "my") {
+        console.log(`[AGENT DEBUG] Claim ${c.claimNo}: assignedTo=${c.assignedTo}, normalized=${normalizedAssignedTo}, currentId=${normalizedCurrentId}, isOwner=${isOwner}`);
+      }
       
       if (agentQueue === "my") {
         matchesAgent = isOwner;
