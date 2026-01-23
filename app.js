@@ -276,7 +276,8 @@ async function loadUsers() {
 function updateEmployeeMap() {
   // Clear and rebuild employeeMap from loaded users
   // Use odoo_id as the key for consistency instead of index-based IDs
-  allUsers.forEach((user) => {
+  allUsers.forEach((user, index) => {
+    // Add mapping by odoo_id (new format)
     employeeMap[user.odoo_id] = {
       name: user.name,
       avatar: user.avatar,
@@ -284,10 +285,31 @@ function updateEmployeeMap() {
       odoo_id: user.odoo_id,
       email: user.email
     };
+    
+    // Also add legacy EMP mapping for backward compatibility with existing data
+    const legacyEmpId = `EMP${String(index + 1).padStart(3, '0')}`;
+    if (!employeeMap[legacyEmpId]) {
+      employeeMap[legacyEmpId] = employeeMap[user.odoo_id];
+    }
   });
 }
 
 // ==================== AUTHENTICATION ====================
+
+// Helper function to normalize IDs for backward compatibility
+// Maps both EMP001 format and odoo_id to a consistent identifier
+function normalizeAgentId(agentId) {
+  if (!agentId) return null;
+  
+  // If it's already in odoo_id format (found in employeeMap directly), return as-is
+  if (employeeMap[agentId] && employeeMap[agentId].odoo_id) {
+    return employeeMap[agentId].odoo_id;
+  }
+  
+  // Return the ID as-is if not found
+  return agentId;
+}
+
 window.handleLogin = async function() {
   const loginId = document.getElementById("loginId").value.toLowerCase().trim();
   const password = document.getElementById("loginPassword").value;
@@ -515,9 +537,10 @@ function formatCurrency(amount) {
 function updateStats() {
   let relevantClaims = claims;
   
-  // If agent, only show their claims
+  // If agent, only show their claims (with backward compatibility)
   if (currentUser && currentUser.role === "agent") {
-    relevantClaims = claims.filter(c => c.assignedTo === currentUser.id);
+    const normalizedCurrentId = normalizeAgentId(currentUser.id);
+    relevantClaims = claims.filter(c => normalizeAgentId(c.assignedTo) === normalizedCurrentId);
   }
   
   const today = new Date();
@@ -845,7 +868,13 @@ function updateEmployeeStats() {
   
   // Update stats for each employee
   Object.keys(employeeMap).forEach(empId => {
-    const empClaims = claims.filter(c => c.assignedTo === empId);
+    // Only process if this is a unique employee (use odoo_id to avoid duplicates)
+    if (employeeMap[empId].odoo_id !== empId) return; // Skip if this is a legacy EMP ID alias
+    
+    const empClaims = claims.filter(c => {
+      const normalizedAssigned = normalizeAgentId(c.assignedTo);
+      return normalizedAssigned === employeeMap[empId].odoo_id;
+    });
     const total = empClaims.length;
     const overdue = empClaims.filter(c => {
       if (!c.nextFollowUp || c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV") return false;
@@ -958,12 +987,17 @@ function getFilteredClaims() {
       if (agentFilter === "unassigned") {
         matchesAgent = !c.assignedTo;
       } else if (agentFilter !== "all") {
-        matchesAgent = c.assignedTo === agentFilter;
+        matchesAgent = normalizeAgentId(c.assignedTo) === agentFilter;
       }
     } else {
-      // Agent queue logic
-      const isOwner = c.assignedTo === currentUser.id;
-      const isSharedWithMe = c.sharedWith && c.sharedWith.includes(currentUser.id);
+      // Agent queue logic - normalize IDs for backward compatibility
+      const normalizedCurrentId = normalizeAgentId(currentUser.id);
+      const normalizedAssignedTo = normalizeAgentId(c.assignedTo);
+      
+      const isOwner = normalizedAssignedTo === normalizedCurrentId;
+      const isSharedWithMe = c.sharedWith && c.sharedWith.some(sharedId => 
+        normalizeAgentId(sharedId) === normalizedCurrentId
+      );
       
       if (agentQueue === "my") {
         matchesAgent = isOwner;
@@ -972,7 +1006,7 @@ function getFilteredClaims() {
       } else if (agentQueue === "all") {
         // When viewing all, can filter by specific agent
         if (agentQueueFilter !== "all") {
-          matchesAgent = c.assignedTo === agentQueueFilter;
+          matchesAgent = normalizedAssignedTo === normalizeAgentId(agentQueueFilter);
         }
       }
     }
@@ -1007,8 +1041,15 @@ function render() {
   paginatedClaims.forEach((c) => {
     const claimId = c._id;
     const historyCount = c.history ? c.history.length : 0;
-    const isOwnClaim = c.assignedTo === currentUser.id;
-    const isSharedWithMe = c.sharedWith && c.sharedWith.includes(currentUser.id);
+    
+    // Normalize IDs for comparison (backward compatible)
+    const normalizedCurrentId = normalizeAgentId(currentUser.id);
+    const normalizedAssignedTo = normalizeAgentId(c.assignedTo);
+    
+    const isOwnClaim = normalizedAssignedTo === normalizedCurrentId;
+    const isSharedWithMe = c.sharedWith && c.sharedWith.some(sharedId => 
+      normalizeAgentId(sharedId) === normalizedCurrentId
+    );
     const canWork = currentUser.role === "admin" || isOwnClaim || isSharedWithMe;
     const isPaid = c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV";
     
@@ -1284,8 +1325,14 @@ window.openDetailModal = function(claimId) {
   const claim = findClaimById(claimId);
   if (!claim) return;
   
-  const isOwnClaim = claim.assignedTo === currentUser.id;
-  const isSharedWithMe = claim.sharedWith && claim.sharedWith.includes(currentUser.id);
+  // Normalize IDs for comparison (backward compatible)
+  const normalizedCurrentId = normalizeAgentId(currentUser.id);
+  const normalizedAssignedTo = normalizeAgentId(claim.assignedTo);
+  
+  const isOwnClaim = normalizedAssignedTo === normalizedCurrentId;
+  const isSharedWithMe = claim.sharedWith && claim.sharedWith.some(sharedId => 
+    normalizeAgentId(sharedId) === normalizedCurrentId
+  );
   const canWork = currentUser.role === "admin" || isOwnClaim || isSharedWithMe;
   const isPaid = claim.status === "PAID" || claim.status === "PAID_TO_OTHER_PROV";
   
@@ -1819,7 +1866,8 @@ window.exportData = function() {
   let dataToExport = claims;
   
   if (currentUser.role === "agent") {
-    dataToExport = claims.filter(c => c.assignedTo === currentUser.id);
+    const normalizedCurrentId = normalizeAgentId(currentUser.id);
+    dataToExport = claims.filter(c => normalizeAgentId(c.assignedTo) === normalizedCurrentId);
   }
   
   const dataStr = JSON.stringify(dataToExport, null, 2);
