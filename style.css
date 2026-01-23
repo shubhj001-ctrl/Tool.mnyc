@@ -1386,7 +1386,8 @@ tr.claim-paid td {
   border-radius: var(--radius);
   padding: 12px 14px;
   display: flex;
-  flex-direction: row;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   align-items: center;
   gap: 10px;
   box-shadow: var(--shadow);
