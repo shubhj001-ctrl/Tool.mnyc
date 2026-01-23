@@ -585,40 +585,66 @@ function renderEmployeeCards() {
   const container = document.getElementById('employeeCardsContainer');
   if (!container) return;
   
-  // Get all employees except current user
+  // Get all employees except current user, plus add "Unassigned" as a special entry
   const allEmpIds = Object.keys(employeeMap);
   const empIds = allEmpIds.filter(empId => employeeMap[empId].odoo_id !== currentUser.odoo_id);
-  const totalPages = Math.ceil(empIds.length / employeesPerPage);
+  
+  // Add "UNASSIGNED" as a special key at the end
+  const displayIds = [...empIds, 'UNASSIGNED'];
+  
+  const totalPages = Math.ceil(displayIds.length / employeesPerPage);
   
   // Ensure current page is valid
   if (employeeCarouselPage >= totalPages) employeeCarouselPage = 0;
   if (employeeCarouselPage < 0) employeeCarouselPage = totalPages - 1;
   
   const startIdx = employeeCarouselPage * employeesPerPage;
-  const visibleEmps = empIds.slice(startIdx, startIdx + employeesPerPage);
+  const visibleEmps = displayIds.slice(startIdx, startIdx + employeesPerPage);
   
   let html = '';
   visibleEmps.forEach(empId => {
-    const emp = employeeMap[empId];
-    html += `
-      <div class="employee-card" id="empCard_${empId}">
-        <div class="employee-avatar" style="background: ${emp.color};">${emp.avatar}</div>
-        <div class="employee-info">
-          <h4>${emp.name}</h4>
-        </div>
-        <div class="employee-stats">
-          <div class="emp-stat">
-            <span class="emp-stat-value" id="empTotal_${empId}">0</span>
-            <span class="emp-stat-label">Total</span>
+    if (empId === 'UNASSIGNED') {
+      // Special Unassigned card
+      html += `
+        <div class="employee-card unassigned-card" id="empCard_UNASSIGNED" onclick="filterByEmployee('unassigned')" title="Click to view unassigned claims">
+          <div class="employee-avatar" style="background: #6b7280;"><i class="fas fa-inbox"></i></div>
+          <div class="employee-info">
+            <h4>Unassigned</h4>
           </div>
-          <div class="emp-stat">
-            <span class="emp-stat-value emp-stat-danger" id="empOverdue_${empId}">0</span>
-            <span class="emp-stat-label">Overdue</span>
+          <div class="employee-stats">
+            <div class="emp-stat">
+              <span class="emp-stat-value" id="empTotal_UNASSIGNED">0</span>
+              <span class="emp-stat-label">Total</span>
+            </div>
+            <div class="emp-stat">
+              <span class="emp-stat-value emp-stat-danger" id="empOverdue_UNASSIGNED">0</span>
+              <span class="emp-stat-label">Overdue</span>
+            </div>
           </div>
         </div>
-        <span class="online-status" id="status_${empId}"></span>
-      </div>
-    `;
+      `;
+    } else {
+      const emp = employeeMap[empId];
+      html += `
+        <div class="employee-card" id="empCard_${empId}" onclick="filterByEmployee('${empId}')" title="Click to view ${emp.name}'s claims">
+          <div class="employee-avatar" style="background: ${emp.color};">${emp.avatar}</div>
+          <div class="employee-info">
+            <h4>${emp.name}</h4>
+          </div>
+          <div class="employee-stats">
+            <div class="emp-stat">
+              <span class="emp-stat-value" id="empTotal_${empId}">0</span>
+              <span class="emp-stat-label">Total</span>
+            </div>
+            <div class="emp-stat">
+              <span class="emp-stat-value emp-stat-danger" id="empOverdue_${empId}">0</span>
+              <span class="emp-stat-label">Overdue</span>
+            </div>
+          </div>
+          <span class="online-status" id="status_${empId}"></span>
+        </div>
+      `;
+    }
   });
   
   container.innerHTML = html;
@@ -635,6 +661,63 @@ function renderEmployeeCards() {
   // Update stats for visible cards
   updateEmployeeStats();
 }
+
+// Filter claims by employee when clicking on employee card
+window.filterByEmployee = function(empId) {
+  // Update the agent filter dropdown
+  const agentFilter = document.getElementById('agentFilter');
+  const claimsAgentFilter = document.getElementById('claimsAgentFilter');
+  
+  if (agentFilter) agentFilter.value = empId;
+  if (claimsAgentFilter) claimsAgentFilter.value = empId;
+  
+  // Highlight selected card
+  document.querySelectorAll('.employee-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  const selectedCard = document.getElementById(`empCard_${empId === 'unassigned' ? 'UNASSIGNED' : empId}`);
+  if (selectedCard) selectedCard.classList.add('selected');
+  
+  // Show clear filter button
+  const clearBtn = document.getElementById('clearEmployeeFilter');
+  if (clearBtn) clearBtn.style.display = 'inline-flex';
+  
+  // Re-render the claims table
+  currentPage = 1;
+  render();
+  
+  // Show toast
+  if (empId === 'unassigned') {
+    showToast('Showing unassigned claims');
+  } else {
+    showToast(`Showing ${employeeMap[empId]?.name || empId}'s claims`);
+  }
+};
+
+// Clear employee filter
+window.clearEmployeeFilter = function() {
+  // Reset the agent filter dropdown
+  const agentFilter = document.getElementById('agentFilter');
+  const claimsAgentFilter = document.getElementById('claimsAgentFilter');
+  
+  if (agentFilter) agentFilter.value = 'all';
+  if (claimsAgentFilter) claimsAgentFilter.value = 'all';
+  
+  // Remove selection from all cards
+  document.querySelectorAll('.employee-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  
+  // Hide clear filter button
+  const clearBtn = document.getElementById('clearEmployeeFilter');
+  if (clearBtn) clearBtn.style.display = 'none';
+  
+  // Re-render the claims table
+  currentPage = 1;
+  render();
+  
+  showToast('Showing all claims');
+};
 
 function renderCarouselDots(totalPages) {
   const dotsContainer = document.getElementById('carouselDots');
@@ -707,17 +790,25 @@ function populateAgentDropdowns() {
     });
   }
   
-  // Bulk assign agent dropdown (exclude current user)
+  // Bulk assign agent dropdown (exclude current user, include Unassign option)
   const bulkAssignAgentSelect = document.getElementById('bulkAssignAgentSelect');
   if (bulkAssignAgentSelect) {
     bulkAssignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
+    // Add Unassign option first (admin only)
+    if (currentUser && currentUser.role === 'admin') {
+      const unassignOption = document.createElement('option');
+      unassignOption.value = 'UNASSIGN';
+      unassignOption.textContent = '❌ Unassign (Remove from queue)';
+      unassignOption.style.color = '#dc2626';
+      bulkAssignAgentSelect.appendChild(unassignOption);
+    }
     empIds.forEach(empId => {
       // Exclude current user from bulk assignment dropdown
       if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
         const option = document.createElement('option');
         option.value = empId;
-        option.textContent = `${emp.name} (${empId})`;
+        option.textContent = `${emp.name}`;
         bulkAssignAgentSelect.appendChild(option);
       }
     });
@@ -759,6 +850,7 @@ function updateEmployeeStats() {
   const today = getNowEST(); // Use EST timezone
   today.setHours(0, 0, 0, 0);
   
+  // Update stats for each employee
   Object.keys(employeeMap).forEach(empId => {
     const empClaims = claims.filter(c => c.assignedTo === empId);
     const total = empClaims.length;
@@ -787,6 +879,22 @@ function updateEmployeeStats() {
       statusEl.textContent = isOnline ? 'Online' : 'Offline';
     }
   });
+  
+  // Update stats for UNASSIGNED claims
+  const unassignedClaims = claims.filter(c => !c.assignedTo);
+  const unassignedTotal = unassignedClaims.length;
+  const unassignedOverdue = unassignedClaims.filter(c => {
+    if (!c.nextFollowUp || c.status === "PAID" || c.status === "PAID_TO_OTHER_PROV") return false;
+    const next = new Date(c.nextFollowUp);
+    next.setHours(0, 0, 0, 0);
+    return next < today;
+  }).length;
+  
+  const unassignedTotalEl = document.getElementById('empTotal_UNASSIGNED');
+  const unassignedOverdueEl = document.getElementById('empOverdue_UNASSIGNED');
+  
+  if (unassignedTotalEl) unassignedTotalEl.textContent = unassignedTotal;
+  if (unassignedOverdueEl) unassignedOverdueEl.textContent = unassignedOverdue;
 }
 
 // ==================== FILTER FUNCTIONS ====================
@@ -1655,11 +1763,15 @@ window.saveBulkAssignment = async function() {
     return;
   }
   
+  // Handle UNASSIGN option
+  const isUnassigning = agentId === 'UNASSIGN';
+  const assignValue = isUnassigning ? null : agentId;
+  
   try {
     // Update all selected claims
     const promises = Array.from(selectedClaims).map(claimId => 
       apiCall(`/api/claims/${claimId}`, 'PUT', {
-        assignedTo: agentId,
+        assignedTo: assignValue,
         sharedWith: []
       })
     );
@@ -1667,9 +1779,15 @@ window.saveBulkAssignment = async function() {
     await Promise.all(promises);
     
     closeBulkAssignModal();
+    const count = selectedClaims.size;
     clearSelection();
     loadClaims();
-    showToast(`${selectedClaims.size} claims assigned to ${employeeMap[agentId]?.name || agentId}`);
+    
+    if (isUnassigning) {
+      showToast(`${count} claim${count !== 1 ? 's' : ''} unassigned and moved to Unassigned queue`);
+    } else {
+      showToast(`${count} claim${count !== 1 ? 's' : ''} assigned to ${employeeMap[agentId]?.name || agentId}`);
+    }
   } catch (error) {
     showToast("Error assigning claims: " + error.message, "error");
   }

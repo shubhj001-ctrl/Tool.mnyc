@@ -158,6 +158,16 @@
   background: var(--card);
 }
 
+[data-theme="dark"] .employee-card.unassigned-card {
+  background: linear-gradient(135deg, #374151, #1f2937);
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .employee-card.unassigned-card:hover {
+  border-color: #6b7280;
+  background: linear-gradient(135deg, #4b5563, #374151);
+}
+
 [data-theme="dark"] .carousel-arrow {
   background: var(--card);
   color: var(--text);
@@ -811,6 +821,42 @@ body {
   transform: scale(1.2);
 }
 
+/* Employee Section Header */
+.employee-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.employee-section-header .section-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.employee-section-header .section-label i {
+  color: var(--primary);
+}
+
+.clear-filter-btn {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.clear-filter-btn:hover {
+  background: #dc2626;
+}
+
 /* Employee Overview Cards */
 .employee-overview {
   display: grid;
@@ -830,11 +876,41 @@ body {
   box-shadow: var(--shadow);
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
 }
 
 .employee-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
+}
+
+.employee-card.selected {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+}
+
+.employee-card.unassigned-card {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border: 2px dashed #9ca3af;
+}
+
+.employee-card.unassigned-card:hover {
+  border-color: #6b7280;
+  background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+}
+
+.employee-card.unassigned-card.selected {
+  border-style: solid;
+  border-color: var(--primary);
+}
+
+.employee-card.unassigned-card .employee-avatar {
+  background: #6b7280 !important;
+}
+
+.employee-card.unassigned-card .employee-avatar i {
+  font-size: 1.2rem;
 }
 
 .employee-avatar {
