@@ -607,12 +607,20 @@ function renderEmployeeCards() {
   const container = document.getElementById('employeeCardsContainer');
   if (!container) return;
   
-  // Get all employees except current user, plus add "Unassigned" as a special entry
-  const allEmpIds = Object.keys(employeeMap);
-  const empIds = allEmpIds.filter(empId => employeeMap[empId].odoo_id !== currentUser.odoo_id);
+  // Get unique employees by odoo_id (avoid duplicates from both EMP001 and odoo_id formats)
+  const seenOdooIds = new Set();
+  const uniqueEmpIds = [];
+  
+  Object.keys(employeeMap).forEach(empId => {
+    const odooId = employeeMap[empId].odoo_id;
+    if (!seenOdooIds.has(odooId) && odooId !== currentUser.odoo_id) {
+      seenOdooIds.add(odooId);
+      uniqueEmpIds.push(empId); // Use the actual empId from map, which will be odoo_id now
+    }
+  });
   
   // Add "UNASSIGNED" as a special key at the end
-  const displayIds = [...empIds, 'UNASSIGNED'];
+  const displayIds = [...uniqueEmpIds, 'UNASSIGNED'];
   
   const totalPages = Math.ceil(displayIds.length / employeesPerPage);
   
@@ -772,7 +780,17 @@ window.goToEmployeePage = function(page) {
 };
 
 function populateAgentDropdowns() {
-  const empIds = Object.keys(employeeMap);
+  // Get unique employees by odoo_id to avoid duplicates
+  const seenOdooIds = new Set();
+  const uniqueEmpIds = [];
+  
+  Object.keys(employeeMap).forEach(empId => {
+    const odooId = employeeMap[empId].odoo_id;
+    if (!seenOdooIds.has(odooId)) {
+      seenOdooIds.add(odooId);
+      uniqueEmpIds.push(empId);
+    }
+  });
   
   // Agent filter dropdowns (both hidden and visible) - #agentFilter and #claimsAgentFilter
   document.querySelectorAll('#agentFilter, #claimsAgentFilter').forEach(agentFilter => {
@@ -782,7 +800,7 @@ function populateAgentDropdowns() {
     agentFilter.innerHTML = '';
     if (firstOption) agentFilter.appendChild(firstOption.cloneNode(true));
     
-    empIds.forEach(empId => {
+    uniqueEmpIds.forEach(empId => {
       // Exclude current user from agent filter dropdown
       if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
@@ -800,7 +818,7 @@ function populateAgentDropdowns() {
   const assignAgentSelect = document.getElementById('assignAgentSelect');
   if (assignAgentSelect) {
     assignAgentSelect.innerHTML = '<option value="">-- Select Agent --</option>';
-    empIds.forEach(empId => {
+    uniqueEmpIds.forEach(empId => {
       // Exclude current user from assignment dropdown
       if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
@@ -824,7 +842,7 @@ function populateAgentDropdowns() {
       unassignOption.style.color = '#dc2626';
       bulkAssignAgentSelect.appendChild(unassignOption);
     }
-    empIds.forEach(empId => {
+    uniqueEmpIds.forEach(empId => {
       // Exclude current user from bulk assignment dropdown
       if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
@@ -840,7 +858,7 @@ function populateAgentDropdowns() {
   const agentQueueFilter = document.getElementById('agentQueueFilter');
   if (agentQueueFilter) {
     agentQueueFilter.innerHTML = '<option value="all">All Agents</option>';
-    empIds.forEach(empId => {
+    uniqueEmpIds.forEach(empId => {
       const emp = employeeMap[empId];
       const option = document.createElement('option');
       option.value = empId;
@@ -853,7 +871,7 @@ function populateAgentDropdowns() {
   const newAssigneeSelect = document.getElementById('newAssignee');
   if (newAssigneeSelect) {
     newAssigneeSelect.innerHTML = '<option value="">-- Select Agent --</option>';
-    empIds.forEach(empId => {
+    uniqueEmpIds.forEach(empId => {
       // Exclude current user from new claim assignment
       if (employeeMap[empId].odoo_id !== currentUser.odoo_id) {
         const emp = employeeMap[empId];
