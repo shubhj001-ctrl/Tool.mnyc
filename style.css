@@ -1435,6 +1435,13 @@ tr.claim-paid td {
   color: #6b7280;
 }
 
+#unassignedCard {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+}
+
 .stat-info {
   display: flex;
   flex-direction: column;
