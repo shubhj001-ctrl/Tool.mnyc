@@ -622,8 +622,8 @@ function renderEmployeeCards() {
     empId !== currentUser.odoo_id // Exclude current user
   );
   
-  // Add "UNASSIGNED" as a special key at the end
-  const displayIds = [...allEmpIds, 'UNASSIGNED'];
+  // Don't add UNASSIGNED to carousel - it's now a stat card instead
+  const displayIds = [...allEmpIds];
   
   const totalPages = Math.ceil(displayIds.length / employeesPerPage);
   
@@ -636,48 +636,26 @@ function renderEmployeeCards() {
   
   let html = '';
   visibleEmps.forEach(empId => {
-    if (empId === 'UNASSIGNED') {
-      // Special Unassigned card
-      html += `
-        <div class="employee-card unassigned-card" id="empCard_UNASSIGNED" onclick="filterByEmployee('unassigned')" title="Click to view unassigned claims">
-          <div class="employee-avatar" style="background: #6b7280;"><i class="fas fa-inbox"></i></div>
-          <div class="employee-info">
-            <h4>Unassigned</h4>
+    const emp = employeeMap[empId];
+    html += `
+      <div class="employee-card" id="empCard_${empId}" onclick="filterByEmployee('${empId}')" title="Click to view ${emp.name}'s claims">
+        <div class="employee-avatar" style="background: ${emp.color};">${emp.avatar}</div>
+        <div class="employee-info">
+          <h4>${emp.name}</h4>
+        </div>
+        <div class="employee-stats">
+          <div class="emp-stat">
+            <span class="emp-stat-value" id="empTotal_${empId}">0</span>
+            <span class="emp-stat-label">Total</span>
           </div>
-          <div class="employee-stats">
-            <div class="emp-stat">
-              <span class="emp-stat-value" id="empTotal_UNASSIGNED">0</span>
-              <span class="emp-stat-label">Total</span>
-            </div>
-            <div class="emp-stat">
-              <span class="emp-stat-value emp-stat-danger" id="empOverdue_UNASSIGNED">0</span>
-              <span class="emp-stat-label">Overdue</span>
-            </div>
+          <div class="emp-stat">
+            <span class="emp-stat-value emp-stat-danger" id="empOverdue_${empId}">0</span>
+            <span class="emp-stat-label">Overdue</span>
           </div>
         </div>
-      `;
-    } else {
-      const emp = employeeMap[empId];
-      html += `
-        <div class="employee-card" id="empCard_${empId}" onclick="filterByEmployee('${empId}')" title="Click to view ${emp.name}'s claims">
-          <div class="employee-avatar" style="background: ${emp.color};">${emp.avatar}</div>
-          <div class="employee-info">
-            <h4>${emp.name}</h4>
-          </div>
-          <div class="employee-stats">
-            <div class="emp-stat">
-              <span class="emp-stat-value" id="empTotal_${empId}">0</span>
-              <span class="emp-stat-label">Total</span>
-            </div>
-            <div class="emp-stat">
-              <span class="emp-stat-value emp-stat-danger" id="empOverdue_${empId}">0</span>
-              <span class="emp-stat-label">Overdue</span>
-            </div>
-          </div>
-          <span class="online-status" id="status_${empId}"></span>
-        </div>
-      `;
-    }
+        <span class="online-status" id="status_${empId}"></span>
+      </div>
+    `;
   });
   
   container.innerHTML = html;
