@@ -1428,6 +1428,11 @@ tr.claim-paid td {
   color: var(--danger);
 }
 
+.stat-icon-purple {
+  background: #ede9fe;
+  color: #8b5cf6;
+}
+
 .stat-info {
   display: flex;
   flex-direction: column;

@@ -379,6 +379,7 @@ function showApp() {
   const claimsAgentFilter = document.getElementById("claimsAgentFilter");
   const checkboxHeader = document.getElementById("checkboxHeader");
   const adminOnlyCols = document.querySelectorAll(".admin-only-col");
+  const unassignedCard = document.getElementById("unassignedCard");
   
   if (currentUser.role === "master") {
     if (masterAdminControls) masterAdminControls.style.display = "block";
@@ -393,6 +394,8 @@ function showApp() {
     adminOnlyCols.forEach(col => col.style.display = "table-cell");
     // Hide profile button
     document.getElementById("profileBtn").style.display = "none";
+    // Show unassigned stat card for admin
+    if (unassignedCard) unassignedCard.style.display = "block";
   } else if (currentUser.role === "admin") {
     if (masterAdminMenuBtn) masterAdminMenuBtn.style.display = "none";
     adminControls.style.display = "block";
@@ -405,6 +408,8 @@ function showApp() {
     adminOnlyCols.forEach(col => col.style.display = "table-cell");
     // Hide profile button for admin
     document.getElementById("profileBtn").style.display = "none";
+    // Show unassigned stat card for admin
+    if (unassignedCard) unassignedCard.style.display = "block";
   } else {
     if (masterAdminMenuBtn) masterAdminMenuBtn.style.display = "none";
     adminControls.style.display = "none";
@@ -417,6 +422,8 @@ function showApp() {
     adminOnlyCols.forEach(col => col.style.display = "none");
     // Show profile button for agents
     document.getElementById("profileBtn").style.display = "inline-flex";
+    // Hide unassigned stat card for agents
+    if (unassignedCard) unassignedCard.style.display = "none";
   }
   
   // Clear any previous selection
@@ -544,7 +551,7 @@ function updateStats() {
   const today = getNowEST(); // Use EST timezone for consistency
   today.setHours(0, 0, 0, 0);
   
-  let total, pending, paid, overdue;
+  let total, pending, paid, overdue, unassigned;
   
   if (currentUser && currentUser.role === "admin") {
     // ADMIN CARD DEFINITIONS:
@@ -564,6 +571,9 @@ function updateStats() {
       next.setHours(0, 0, 0, 0);
       return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
     }).length;
+    
+    // "Unassigned" = claims with no assigned agent
+    unassigned = claims.filter(c => !c.assignedTo).length;
   } else {
     // AGENT CARD DEFINITIONS:
     // "My Claims" = all assigned to agent
@@ -582,12 +592,20 @@ function updateStats() {
       next.setHours(0, 0, 0, 0);
       return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
     }).length;
+    
+    unassigned = 0; // Agents don't see unassigned stats
   }
 
   document.getElementById("totalClaims").textContent = total;
   document.getElementById("pendingClaims").textContent = pending;
   document.getElementById("paidClaims").textContent = paid;
   document.getElementById("overdueClaims").textContent = overdue;
+  
+  // Update unassigned stat card (only show for admin/master)
+  const unassignedCard = document.getElementById("unassignedClaims");
+  if (unassignedCard) {
+    unassignedCard.textContent = unassigned;
+  }
 }
 
 let employeeCarouselPage = 0;
@@ -2520,6 +2538,9 @@ window.openCardModal = function(type) {
     title.textContent = 'Overdue Claims';
     extraColumn.textContent = 'Next Follow-Up';
     extraColumn.style.display = 'table-cell';
+  } else if (type === 'unassigned') {
+    title.textContent = 'Unassigned Claims';
+    extraColumn.style.display = 'none';
   }
   
   // Populate the modal with data
@@ -2566,6 +2587,9 @@ function populateCardModal(type) {
       next.setHours(0, 0, 0, 0);
       return next < today && c.status !== "PAID" && c.status !== "PAID_TO_OTHER_PROV";
     });
+  } else if (type === 'unassigned') {
+    // Unassigned claims - admin only
+    filteredClaims = relevantClaims.filter(c => !c.assignedTo);
   }
   
   if (filteredClaims.length === 0) {

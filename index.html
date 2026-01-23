@@ -230,7 +230,15 @@
       <span class="stat-label">Overdue</span>
     </div>
   </div>
-</div>
+  <div class="stat-card clickable-card admin-only-stat" id="unassignedCard" onclick="openCardModal('unassigned')">
+    <div class="stat-icon stat-icon-purple">
+      <i class="fas fa-inbox"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value" id="unassignedClaims">0</span>
+      <span class="stat-label">Unassigned</span>
+    </div>
+  </div>
 
 <!-- Filter Bar -->
 <div class="filter-bar" style="display: none;">
