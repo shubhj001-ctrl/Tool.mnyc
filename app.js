@@ -311,6 +311,15 @@ function normalizeAgentId(agentId) {
     return normalized;
   }
   
+  // Try case-insensitive lookup for odoo_ids (they're usually lowercase)
+  const lowerCaseId = String(agentId).toLowerCase();
+  for (const [key, emp] of Object.entries(employeeMap)) {
+    if (emp.odoo_id && emp.odoo_id.toLowerCase() === lowerCaseId) {
+      console.log(`[NORMALIZE] Case-insensitive: ${agentId} -> ${emp.odoo_id}`);
+      return emp.odoo_id;
+    }
+  }
+  
   // Return the ID as-is if not found
   console.warn(`[NORMALIZE] ID not found in employeeMap: ${agentId}`);
   return agentId;
@@ -998,7 +1007,8 @@ function getFilteredClaims() {
   
   // Debug logging for agents
   if (currentUser && currentUser.role === "agent") {
-    console.log(`[AGENT DEBUG] currentUser.id=${currentUser.id}, agentQueue=${agentQueue}, totalClaims=${claims.length}`);
+    console.log(`[AGENT DEBUG] currentUser.id=${currentUser.id}, currentUser.odoo_id=${currentUser.odoo_id}, agentQueue=${agentQueue}, totalClaims=${claims.length}`);
+    console.log(`[AGENT DEBUG] employeeMap keys:`, Object.keys(employeeMap));
   }
   
   return claims.filter((c, i) => {
@@ -1030,7 +1040,7 @@ function getFilteredClaims() {
       
       // Debug first claim for agents
       if (i === 0 && agentQueue === "my") {
-        console.log(`[AGENT DEBUG] Claim ${c.claimNo}: assignedTo=${c.assignedTo}, normalized=${normalizedAssignedTo}, currentId=${normalizedCurrentId}, isOwner=${isOwner}`);
+        console.log(`[AGENT DEBUG] Claim ${c.claimNo}: assignedTo="${c.assignedTo}", normalized="${normalizedAssignedTo}", currentId="${normalizedCurrentId}", isOwner=${isOwner}`);
       }
       
       if (agentQueue === "my") {
