@@ -128,11 +128,8 @@ window.toggleTheme = function() {
 initTheme();
 
 // ==================== USER & AUTH SYSTEM ====================
-const employeeMap = {
-  "EMP001": { name: "Shubham", avatar: "S", color: "#3b82f6" },
-  "EMP002": { name: "Ravi", avatar: "R", color: "#10b981" },
-  "EMP003": { name: "Chirag", avatar: "C", color: "#f59e0b" }
-};
+// employeeMap is built dynamically from database users during updateEmployeeMap()
+const employeeMap = {};
 
 let currentUser = null;
 let importedData = [];
@@ -263,9 +260,9 @@ async function loadUsers() {
 // Update employeeMap dynamically from database
 function updateEmployeeMap() {
   // Clear and rebuild employeeMap from loaded users
-  allUsers.forEach((user, index) => {
-    const empId = `EMP00${index + 1}`;
-    employeeMap[empId] = {
+  // Use odoo_id as the key for consistency instead of index-based IDs
+  allUsers.forEach((user) => {
+    employeeMap[user.odoo_id] = {
       name: user.name,
       avatar: user.avatar,
       color: user.color,
@@ -306,8 +303,8 @@ window.handleLogin = async function() {
     if (currentUser.role === 'admin') {
       currentUser.id = 'ADMIN001';
     } else {
-      const userIndex = allUsers.findIndex(u => u.odoo_id === currentUser.odoo_id);
-      currentUser.id = userIndex >= 0 ? `EMP00${userIndex + 1}` : `EMP001`;
+      // Use odoo_id directly for agent users to maintain consistency
+      currentUser.id = currentUser.odoo_id;
     }
     
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
@@ -2649,8 +2646,7 @@ function populateReportAgentFilter() {
   const select = document.getElementById('reportAgentFilter');
   select.innerHTML = '<option value="">-- All Agents --</option>';
   
-  allUsers.forEach((user, index) => {
-    const empId = `EMP00${index + 1}`;
+  allUsers.forEach((user) => {
     const option = document.createElement('option');
     option.value = user.odoo_id;
     option.textContent = user.name;
