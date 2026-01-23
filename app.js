@@ -330,6 +330,8 @@ window.handleLogin = async function() {
       currentUser.id = currentUser.odoo_id;
     }
     
+    console.log('[LOGIN] User logged in:', currentUser.odoo_id, 'Role:', currentUser.role, 'currentUser.id set to:', currentUser.id);
+    
     localStorage.setItem("mnyc_currentUser", JSON.stringify(currentUser));
     loginError.style.display = "none";
     loginBtn.innerHTML = originalBtnText;
@@ -434,6 +436,16 @@ function checkSession() {
   const savedUser = localStorage.getItem("mnyc_currentUser");
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
+    
+    // IMPORTANT: Restore currentUser.id from odoo_id when resuming session
+    if (currentUser.role === 'admin') {
+      currentUser.id = 'ADMIN001';
+    } else {
+      currentUser.id = currentUser.odoo_id;
+    }
+    
+    console.log('[SESSION RESTORE] User restored:', currentUser.odoo_id, 'Role:', currentUser.role, 'currentUser.id set to:', currentUser.id);
+    
     // Load users first for proper mapping
     loadUsers().then(() => showApp());
   } else {
@@ -979,6 +991,8 @@ function getFilteredClaims() {
       const normalizedCurrentId = normalizeAgentId(currentUser.id);
       const normalizedAssignedTo = normalizeAgentId(c.assignedTo);
       
+      console.log(`[FILTER] Current user: ${currentUser.id} (normalized: ${normalizedCurrentId}), Claim ${c.claimNo}: assignedTo=${c.assignedTo} (normalized: ${normalizedAssignedTo}), Queue: ${agentQueue}`);
+      
       const isOwner = normalizedAssignedTo === normalizedCurrentId;
       const isSharedWithMe = c.sharedWith && c.sharedWith.some(sharedId => 
         normalizeAgentId(sharedId) === normalizedCurrentId
@@ -986,6 +1000,7 @@ function getFilteredClaims() {
       
       if (agentQueue === "my") {
         matchesAgent = isOwner;
+        console.log(`  [MY QUEUE] isOwner=${isOwner}, matchesAgent=${matchesAgent}`);
       } else if (agentQueue === "shared") {
         matchesAgent = isSharedWithMe && !isOwner;
       } else if (agentQueue === "all") {
