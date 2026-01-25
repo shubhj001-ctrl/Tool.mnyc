@@ -1,3 +1,14 @@
+// Download Excel template for claim import
+window.downloadTemplate = function() {
+  const headers = [
+    "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket", "Status"
+  ];
+  // Create a worksheet with just the headers
+  const ws = XLSX.utils.aoa_to_sheet([headers]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "ClaimsTemplate");
+  XLSX.writeFile(wb, "claims_template.xlsx");
+}
 // ==================== API BASE URL ====================
 // Format date as '8 Jan, 2026' for tooltips
 function toAlphaDate(date) {

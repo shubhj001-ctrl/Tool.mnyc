@@ -565,7 +565,12 @@
       <button class="btn btn-secondary" onclick="closeImportModal()">
         <i class="fas fa-times"></i> Cancel
       </button>
-      <div id="importError" style="color: var(--danger); margin-bottom: 10px; display: none;"></div>
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 10px;">
+        <div id="importError" style="color: var(--danger); display: none;"></div>
+        <button type="button" class="btn btn-secondary" style="margin-left:auto;" onclick="downloadTemplate()">
+          <i class="fas fa-download"></i> Download Template
+        </button>
+      </div>
       <button class="btn btn-primary" id="importBtn" onclick="importClaims()" disabled>
         <span id="importSpinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Uploading...</span>
         <span id="importText"><i class="fas fa-upload"></i> Import Claims</span>
