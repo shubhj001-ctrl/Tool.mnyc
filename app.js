@@ -1926,13 +1926,22 @@ function processExcelFile(file) {
       const requiredFields = [
         "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket", "Status"
       ];
+      const importError = document.getElementById('importError');
+      importError.style.display = 'none';
+      importError.textContent = '';
       // Check if all required fields are present in the first row
       const firstRow = jsonData[0];
       const missingFields = requiredFields.filter(field => !(field in firstRow));
       if (missingFields.length > 0) {
-        showToast(`File not compatible. Missing fields: ${missingFields.join(", ")}`, "error");
+        importError.style.display = 'block';
+        importError.textContent = `File not compatible. Missing fields: ${missingFields.join(", ")}`;
+        document.getElementById('importBtn').disabled = true;
         return;
       }
+      // If file is valid, hide error and enable button
+      importError.style.display = 'none';
+      importError.textContent = '';
+      document.getElementById('importBtn').disabled = false;
 
       // Process and validate data - map all fields from Excel
       importedData = jsonData.map(row => {
