@@ -2051,12 +2051,26 @@ window.importClaims = async function() {
     history: []
   }));
   
+  // Show uploading animation
+  document.getElementById('importSpinner').style.display = 'inline-block';
+  document.getElementById('importText').style.display = 'none';
+  document.getElementById('importBtn').disabled = true;
   try {
     const result = await apiCall('/api/claims/bulk', 'POST', newClaims);
-    closeImportModal();
-    loadClaims();
-    showToast(`${result.imported || newClaims.length} claims imported successfully!`);
+    // Show success for 1.5s before closing
+    document.getElementById('importSpinner').innerHTML = '<i class="fas fa-check-circle" style="color:var(--success);"></i> Uploaded!';
+    setTimeout(() => {
+      closeImportModal();
+      document.getElementById('importSpinner').style.display = 'none';
+      document.getElementById('importText').style.display = 'inline-block';
+      document.getElementById('importBtn').disabled = false;
+      loadClaims();
+      showToast(`${result.imported || newClaims.length} claims imported successfully!`);
+    }, 1500);
   } catch (error) {
+    document.getElementById('importSpinner').style.display = 'none';
+    document.getElementById('importText').style.display = 'inline-block';
+    document.getElementById('importBtn').disabled = false;
     showToast(error.message, "error");
   }
 };
