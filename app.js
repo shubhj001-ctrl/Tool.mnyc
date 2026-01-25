@@ -954,7 +954,9 @@ window.setAgentQueue = function(queue) {
 };
 
 function getFilteredClaims() {
-  const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+  // Get search term from the visible search input
+  const searchInput = document.getElementById("searchInput");
+  const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
   
   // Get agent filter from the visible dropdown in the header
   let agentFilter = "all";
