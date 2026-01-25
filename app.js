@@ -1921,7 +1921,19 @@ function processExcelFile(file) {
         showToast("No data found in the file", "error");
         return;
       }
-      
+
+      // Required claim fields
+      const requiredFields = [
+        "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket", "Status"
+      ];
+      // Check if all required fields are present in the first row
+      const firstRow = jsonData[0];
+      const missingFields = requiredFields.filter(field => !(field in firstRow));
+      if (missingFields.length > 0) {
+        showToast(`File not compatible. Missing fields: ${missingFields.join(", ")}`, "error");
+        return;
+      }
+
       // Process and validate data - map all fields from Excel
       importedData = jsonData.map(row => {
         // Parse DOS (Date of Service) - handles various formats
@@ -1989,19 +2001,31 @@ function showImportPreview() {
   
   previewCount.textContent = importedData.length;
   
-  previewBody.innerHTML = importedData.slice(0, 10).map(row => `
+  // Show ideal format preview above the table
+  const idealFormat = [
+    "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket", "Status"
+  ];
+  const formatHtml = `<div style="margin-bottom:10px; color:var(--text-muted); font-size:14px;">Required columns: <strong>${idealFormat.join(' | ')}</strong></div>`;
+  previewBody.innerHTML = formatHtml + importedData.slice(0, 10).map(row => `
     <tr>
-      <td>${row.claimNo}</td>
-      <td>${row.patient}</td>
-      <td>${formatCurrency(row.balance)}</td>
-      <td>${row.primaryPayer || '-'}</td>
+      <td>${row["Claim #"]}</td>
+      <td>${row["Account #"]}</td>
+      <td>${row["Patient Name"]}</td>
+      <td>${row["Date of Service (D.O.S)"]}</td>
+      <td>${row["Visit Type"]}</td>
+      <td>${row["Primary Payer"]}</td>
+      <td>${formatCurrency(row["Billed Charges"] || 0)}</td>
+      <td>${formatCurrency(row["Balance"] || 0)}</td>
+      <td>${row["Age (Days)"]}</td>
+      <td>${row["Age Bucket"]}</td>
+      <td>${row["Status"]}</td>
     </tr>
   `).join('');
-  
+
   if (importedData.length > 10) {
-    previewBody.innerHTML += `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">... and ${importedData.length - 10} more</td></tr>`;
+    previewBody.innerHTML += `<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">... and ${importedData.length - 10} more</td></tr>`;
   }
-  
+
   document.getElementById("importPreview").style.display = "block";
   document.getElementById("importBtn").disabled = false;
 }
