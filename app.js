@@ -819,7 +819,7 @@ function populateAgentDropdowns() {
     if (currentUser && currentUser.role === 'admin') {
       const unassignOption = document.createElement('option');
       unassignOption.value = 'UNASSIGN';
-      unassignOption.textContent = '❌ Unassign (Remove from queue)';
+      unassignOption.textContent = 'Unassign (Remove from queue)';
       unassignOption.style.color = '#dc2626';
       bulkAssignAgentSelect.appendChild(unassignOption);
     }
@@ -1930,7 +1930,12 @@ function processExcelFile(file) {
         if (dosValue) {
           // Handle Excel serial date numbers
           if (typeof dosValue === 'number') {
-            dos = new Date((dosValue - 25569) * 86400 * 1000);
+            // Excel serial date to UTC
+            const utcDate = new Date((dosValue - 25569) * 86400 * 1000);
+            // Convert to EST by formatting as EST string and re-parsing
+            const estString = utcDate.toLocaleString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+            const [month, day, year] = estString.split('/');
+            dos = new Date(Date.UTC(year, month - 1, day));
           } else {
             // Try parsing as string (DD/MM/YY or other formats)
             const parts = String(dosValue).split(/[\/\-]/);
@@ -1939,9 +1944,14 @@ function processExcelFile(file) {
               let month = parseInt(parts[1]) - 1;
               let year = parseInt(parts[2]);
               if (year < 100) year += 2000;
-              dos = new Date(year, month, day);
+              // Construct EST date using UTC
+              dos = new Date(Date.UTC(year, month, day));
             } else {
-              dos = new Date(dosValue);
+              // Parse as EST string if possible
+              const tempDate = new Date(dosValue);
+              const estString = tempDate.toLocaleString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+              const [month, day, year] = estString.split('/');
+              dos = new Date(Date.UTC(year, month - 1, day));
             }
           }
         }
