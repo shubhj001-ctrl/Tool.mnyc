@@ -1,4 +1,13 @@
 // ==================== API BASE URL ====================
+// Format date as '8 Jan, 2026' for tooltips
+function toAlphaDate(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const year = d.getFullYear();
+  return `${day} ${month}, ${year}`;
+}
 const API_BASE = window.location.origin;
 
 // ==================== EST TIMEZONE UTILITIES ====================
