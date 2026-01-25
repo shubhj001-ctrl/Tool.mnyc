@@ -1,7 +1,7 @@
 // Download Excel template for claim import
 window.downloadTemplate = function() {
   const headers = [
-    "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket", "Status"
+    "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket"
   ];
   // Create a worksheet with just the headers
   const ws = XLSX.utils.aoa_to_sheet([headers]);
@@ -1935,7 +1935,7 @@ function processExcelFile(file) {
 
       // Required claim fields
       const requiredFields = [
-        "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket", "Status"
+        "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket"
       ];
       const importError = document.getElementById('importError');
       importError.style.display = 'none';
