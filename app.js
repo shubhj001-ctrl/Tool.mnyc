@@ -1608,15 +1608,19 @@ window.openShareModal = function(claimId) {
     </div>
   `;
   
-  // Build checkboxes for other agents (exclude current owner and current user)
+  // Build checkboxes for other agents (exclude current owner, current user, and admins)
   const shareCheckboxes = document.getElementById("shareCheckboxes");
   const currentShares = claim.sharedWith || [];
-  
+
   let checkboxHTML = '';
   Object.keys(employeeMap).forEach(empId => {
-    // Don't show owner in share list, and don't show current user to prevent self-sharing
-    if (employeeMap[empId].odoo_id !== claim.assignedTo && employeeMap[empId].odoo_id !== currentUser.odoo_id) {
-      const emp = employeeMap[empId];
+    const emp = employeeMap[empId];
+    // Exclude owner, current user, and admins from share list
+    if (
+      emp.odoo_id !== claim.assignedTo &&
+      emp.odoo_id !== currentUser.odoo_id &&
+      emp.role !== 'admin'
+    ) {
       const isChecked = currentShares.includes(empId);
       checkboxHTML += `
         <label class="share-checkbox-item">
