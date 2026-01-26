@@ -1945,13 +1945,15 @@ function processExcelFile(file) {
       const missingFields = requiredFields.filter(field => !(field in firstRow));
       if (missingFields.length > 0) {
         importError.style.display = 'block';
+        importError.style.color = 'var(--danger)';
         importError.textContent = `File not compatible. Missing fields: ${missingFields.join(", ")}`;
         document.getElementById('importBtn').disabled = true;
         return;
       }
-      // If file is valid, hide error and enable button
-      importError.style.display = 'none';
-      importError.textContent = '';
+      // If file is valid, show success in green and enable button
+      importError.style.display = 'block';
+      importError.style.color = 'var(--success)';
+      importError.textContent = 'File imported successfully. Ready to upload claims.';
       document.getElementById('importBtn').disabled = false;
 
       // Process and validate data - map all fields from Excel
