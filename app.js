@@ -1,3 +1,6 @@
+  // Show the cancel file button after a file is selected
+  const cancelFileBtn = document.getElementById('cancelFileBtn');
+  if (cancelFileBtn) cancelFileBtn.style.display = 'inline-block';
 // Download Excel template for claim import
 window.downloadTemplate = function() {
   const headers = [
@@ -2037,6 +2040,33 @@ function showImportPreview() {
   importError.style.color = 'var(--success)';
   importError.textContent = `File imported successfully. Ready to upload claims.`;
   document.getElementById("importBtn").disabled = false;
+  // Show the cancel file button after a file is selected
+  const cancelFileBtn = document.getElementById('cancelFileBtn');
+  if (cancelFileBtn) cancelFileBtn.style.display = 'inline-block';
+// Cancel the uploaded file and reset modal state
+window.cancelUploadedFile = function() {
+  // Hide the cancel button
+  const cancelFileBtn = document.getElementById('cancelFileBtn');
+  if (cancelFileBtn) cancelFileBtn.style.display = 'none';
+  // Reset file input
+  const fileInput = document.getElementById('excelFileInput');
+  if (fileInput) fileInput.value = '';
+  // Hide error/success message
+  const importError = document.getElementById('importError');
+  if (importError) {
+    importError.style.display = 'none';
+    importError.textContent = '';
+  }
+  // Disable import button
+  const importBtn = document.getElementById('importBtn');
+  if (importBtn) importBtn.disabled = true;
+  // Hide preview if any (for robustness)
+  const importPreview = document.getElementById('importPreview');
+  if (importPreview) importPreview.style.display = 'none';
+};
+  // Hide cancel file button on modal close
+  const cancelFileBtn = document.getElementById('cancelFileBtn');
+  if (cancelFileBtn) cancelFileBtn.style.display = 'none';
 }
 
 window.importClaims = async function() {
