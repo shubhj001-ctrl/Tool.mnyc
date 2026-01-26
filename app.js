@@ -1911,6 +1911,12 @@ window.openImportModal = function() {
 
 window.closeImportModal = function() {
   importModal.style.display = "none";
+  // Clear error/success message on modal close
+  const importError = document.getElementById('importError');
+  if (importError) {
+    importError.style.display = 'none';
+    importError.textContent = '';
+  }
 };
 
 window.handleFileSelect = function(event) {
