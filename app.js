@@ -2046,7 +2046,6 @@ function showImportPreview() {
 // Cancel the uploaded file and reset modal state
 window.cancelUploadedFile = function() {
   // Hide the cancel button
-  const cancelFileBtn = document.getElementById('cancelFileBtn');
   if (cancelFileBtn) cancelFileBtn.style.display = 'none';
   // Reset file input
   const fileInput = document.getElementById('excelFileInput');
@@ -2065,7 +2064,6 @@ window.cancelUploadedFile = function() {
   if (importPreview) importPreview.style.display = 'none';
 };
   // Hide cancel file button on modal close
-  const cancelFileBtn = document.getElementById('cancelFileBtn');
   if (cancelFileBtn) cancelFileBtn.style.display = 'none';
 }
 
