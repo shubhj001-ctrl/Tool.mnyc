@@ -1977,23 +1977,30 @@ function processExcelFile(file) {
         if (dosValue) {
           // Normalize string: replace '-' with '/' for consistent parsing
           let normalizedDos = typeof dosValue === 'string' ? dosValue.replace(/-/g, '/') : dosValue;
-          // Handle Excel serial date numbers
           if (typeof normalizedDos === 'number') {
             // Excel serial date to UTC
             const utcDate = new Date((normalizedDos - 25569) * 86400 * 1000);
-            // Convert to EST by formatting as EST string and re-parsing
             const estString = utcDate.toLocaleString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
             const [month, day, year] = estString.split('/');
             dos = new Date(Date.UTC(year, month - 1, day));
           } else {
-            // Try parsing as string (MM/DD/YY or MM-DD-YY or other formats)
+            // Try parsing as string (DD/MM/YYYY or MM/DD/YYYY or variants)
             const parts = String(normalizedDos).split(/[\/-]/);
             if (parts.length === 3) {
-              let month = parseInt(parts[0]) - 1;
-              let day = parseInt(parts[1]);
+              let part1 = parseInt(parts[0]);
+              let part2 = parseInt(parts[1]);
               let year = parseInt(parts[2]);
               if (year < 100) year += 2000;
-              // Construct EST date using UTC
+              let day, month;
+              if (part1 > 12) {
+                // DD/MM/YYYY
+                day = part1;
+                month = part2 - 1;
+              } else {
+                // MM/DD/YYYY
+                month = part1 - 1;
+                day = part2;
+              }
               dos = new Date(Date.UTC(year, month, day));
             } else {
               // Parse as EST string if possible
