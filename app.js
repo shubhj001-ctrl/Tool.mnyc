@@ -1975,27 +1975,29 @@ function processExcelFile(file) {
         let dos = null;
         const dosValue = row.DOS || row["D.O.S"] || row.dos || row["Date of Service"] || row.DateOfService;
         if (dosValue) {
+          // Normalize string: replace '-' with '/' for consistent parsing
+          let normalizedDos = typeof dosValue === 'string' ? dosValue.replace(/-/g, '/') : dosValue;
           // Handle Excel serial date numbers
-          if (typeof dosValue === 'number') {
+          if (typeof normalizedDos === 'number') {
             // Excel serial date to UTC
-            const utcDate = new Date((dosValue - 25569) * 86400 * 1000);
+            const utcDate = new Date((normalizedDos - 25569) * 86400 * 1000);
             // Convert to EST by formatting as EST string and re-parsing
             const estString = utcDate.toLocaleString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
             const [month, day, year] = estString.split('/');
             dos = new Date(Date.UTC(year, month - 1, day));
           } else {
-            // Try parsing as string (DD/MM/YY or other formats)
-            const parts = String(dosValue).split(/[\/\-]/);
+            // Try parsing as string (MM/DD/YY or MM-DD-YY or other formats)
+            const parts = String(normalizedDos).split(/[\/-]/);
             if (parts.length === 3) {
-              let day = parseInt(parts[0]);
-              let month = parseInt(parts[1]) - 1;
+              let month = parseInt(parts[0]) - 1;
+              let day = parseInt(parts[1]);
               let year = parseInt(parts[2]);
               if (year < 100) year += 2000;
               // Construct EST date using UTC
               dos = new Date(Date.UTC(year, month, day));
             } else {
               // Parse as EST string if possible
-              const tempDate = new Date(dosValue);
+              const tempDate = new Date(normalizedDos);
               const estString = tempDate.toLocaleString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
               const [month, day, year] = estString.split('/');
               dos = new Date(Date.UTC(year, month - 1, day));
