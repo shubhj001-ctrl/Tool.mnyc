@@ -1971,56 +1971,52 @@ function processExcelFile(file) {
 
       // Process and validate data - map all fields from Excel
       importedData = jsonData.map(row => {
-        // Parse DOS (Date of Service) - handles various formats
+        // Parse DOS (Date of Service) - handles various formats, including DD-MM-YYYY
         let dos = null;
-        const dosValue = row.DOS || row["D.O.S"] || row.dos || row["Date of Service"] || row.DateOfService;
+        const dosValue = row["Date of Service (D.O.S)"] || row.DOS || row["D.O.S"] || row.dos || row["Date of Service"] || row.DateOfService;
         if (dosValue) {
-          // Normalize string: replace '-' with '/' for consistent parsing
-          let normalizedDos = typeof dosValue === 'string' ? dosValue.replace(/-/g, '/') : dosValue;
-          if (typeof normalizedDos === 'number') {
+          let normalizedDos = typeof dosValue === 'string' ? dosValue.trim() : dosValue;
+          // Try DD-MM-YYYY or DD/MM/YYYY first
+          let match = String(normalizedDos).match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+          if (match) {
+            // Assume DD-MM-YYYY
+            let day = parseInt(match[1]);
+            let month = parseInt(match[2]) - 1;
+            let year = parseInt(match[3]);
+            if (year < 100) year += 2000;
+            dos = new Date(Date.UTC(year, month, day));
+          } else if (typeof normalizedDos === 'number') {
             // Excel serial date to UTC
             const utcDate = new Date((normalizedDos - 25569) * 86400 * 1000);
-            const estString = utcDate.toLocaleString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
-            const [month, day, year] = estString.split('/');
-            dos = new Date(Date.UTC(year, month - 1, day));
+            dos = new Date(Date.UTC(utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate()));
           } else {
-            // Try parsing as string (DD/MM/YYYY or MM/DD/YYYY or variants)
-            const parts = String(normalizedDos).split(/[\/-]/);
-            if (parts.length === 3) {
-              let part1 = parseInt(parts[0]);
-              let part2 = parseInt(parts[1]);
-              let year = parseInt(parts[2]);
-              if (year < 100) year += 2000;
-              let day, month;
-              if (part1 > 12) {
-                // DD/MM/YYYY
-                day = part1;
-                month = part2 - 1;
-              } else {
-                // MM/DD/YYYY
-                month = part1 - 1;
-                day = part2;
-              }
-              dos = new Date(Date.UTC(year, month, day));
+            // Try parsing as ISO or US format
+            const tempDate = new Date(normalizedDos);
+            if (!isNaN(tempDate)) {
+              dos = new Date(Date.UTC(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate()));
             } else {
-              // Parse as EST string if possible
-              const tempDate = new Date(normalizedDos);
-              const estString = tempDate.toLocaleString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
-              const [month, day, year] = estString.split('/');
-              dos = new Date(Date.UTC(year, month - 1, day));
+              dos = null;
             }
           }
         }
-        
+
+        // Remove $ and commas from billedCharges and balance before parsing
+        function parseMoney(val) {
+          if (typeof val === 'string') {
+            return parseFloat(val.replace(/[$,]/g, '')) || 0;
+          }
+          return parseFloat(val) || 0;
+        }
+
         return {
           claimNo: row.ClaimNo || row.claimNo || row["Claim No"] || row["Claim #"] || row["Claim#"] || "",
           patient: row.Patient || row.patient || row.PatientName || row["Patient Name"] || "",
-          balance: parseFloat(row.Balance || row.balance || 0) || 0,
+          balance: parseMoney(row.Balance || row.balance || 0),
           dos: dos,
           visitType: row.VisitType || row["Visit Type"] || row.visitType || null,
           acctNo: row.AcctNo || row["Acct #"] || row["Acct#"] || row.AccountNo || row["Account #"] || row.acctNo || null,
           primaryPayer: row.PrimaryPayer || row["Primary Payer"] || row.Payer || row.primaryPayer || null,
-          billedCharges: parseFloat(row.BilledCharges || row["Billed Charges"] || row.billedCharges || 0) || 0,
+          billedCharges: parseMoney(row.BilledCharges || row["Billed Charges"] || row.billedCharges || 0),
           priority: row.Priority || row.priority || row["Priority"] || null,
           age: parseInt(row.Age || row.age || 0) || null,
           ageBucket: row.AgeBucket || row["Age Bucket"] || row.ageBucket || row["AgeBucket"] || null,
