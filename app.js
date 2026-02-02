@@ -1895,15 +1895,67 @@ window.exportData = function() {
     dataToExport = claims.filter(c => normalizeAgentId(c.assignedTo) === normalizedCurrentId);
   }
   
-  const dataStr = JSON.stringify(dataToExport, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  const estDate = toESTDate(new Date()).replace(/\//g, '-'); // Convert to YYYY-MM-DD format for filename
-  a.download = `mnyc_claims_${currentUser.name}_${estDate}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  // Convert claims data to export format with all mandatory fields
+  const exportData = dataToExport.map(claim => ({
+    ClaimNo: claim.claimNo || '',
+    Patient: claim.patient || '',
+    'D.O.S': claim.dos ? toESTDate(claim.dos) : '',
+    Balance: claim.balance || 0,
+    'Visit Type': claim.visitType || '',
+    'Acct #': claim.acctNo || '',
+    'Primary Payer': claim.primaryPayer || '',
+    'Billed Charges': claim.billedCharges || 0,
+    Priority: claim.priority || '',
+    Age: claim.age || '',
+    'Age Bucket': claim.ageBucket || '',
+    'Assign To': claim.assignedTo || '',
+    Status: claim.status || '',
+    'Date Worked': claim.dateWorked ? toESTDate(claim.dateWorked) : '',
+    'Next Follow Up': claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : ''
+  }));
+  
+  // Create workbook and worksheet
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  
+  // Set column widths for better readability
+  const colWidths = [
+    { wch: 12 }, // ClaimNo
+    { wch: 20 }, // Patient
+    { wch: 12 }, // D.O.S
+    { wch: 12 }, // Balance
+    { wch: 15 }, // Visit Type
+    { wch: 12 }, // Acct #
+    { wch: 18 }, // Primary Payer
+    { wch: 15 }, // Billed Charges
+    { wch: 12 }, // Priority
+    { wch: 8 },  // Age
+    { wch: 15 }, // Age Bucket
+    { wch: 15 }, // Assign To
+    { wch: 12 }, // Status
+    { wch: 15 }, // Date Worked
+    { wch: 15 }  // Next Follow Up
+  ];
+  ws['!cols'] = colWidths;
+  
+  // Add header styling
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let col = range.s.c; col <= range.e.c; col++) {
+    const cellAddress = XLSX.utils.encode_col(col) + '1';
+    if (ws[cellAddress]) {
+      ws[cellAddress].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '366092' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+      };
+    }
+  }
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Claims');
+  
+  const estDate = toESTDate(new Date()).replace(/\//g, '-');
+  XLSX.writeFile(wb, `mnyc_claims_${currentUser.name}_${estDate}.xlsx`);
+  
   showToast("Data exported successfully!");
 };
 
