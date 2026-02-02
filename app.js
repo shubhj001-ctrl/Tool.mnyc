@@ -1895,7 +1895,7 @@ window.exportData = function() {
     dataToExport = claims.filter(c => normalizeAgentId(c.assignedTo) === normalizedCurrentId);
   }
   
-  // Convert claims data to export format with all mandatory fields
+  // Convert claims data to export format with specified fields
   const exportData = dataToExport.map(claim => ({
     ClaimNo: claim.claimNo || '',
     Patient: claim.patient || '',
@@ -1909,9 +1909,7 @@ window.exportData = function() {
     Age: claim.age || '',
     'Age Bucket': claim.ageBucket || '',
     'Assign To': claim.assignedTo || '',
-    Status: claim.status || '',
-    'Date Worked': claim.dateWorked ? toESTDate(claim.dateWorked) : '',
-    'Next Follow Up': claim.nextFollowUp ? toESTDate(claim.nextFollowUp) : ''
+    Status: claim.status || ''
   }));
   
   // Create workbook and worksheet
@@ -1931,9 +1929,7 @@ window.exportData = function() {
     { wch: 8 },  // Age
     { wch: 15 }, // Age Bucket
     { wch: 15 }, // Assign To
-    { wch: 12 }, // Status
-    { wch: 15 }, // Date Worked
-    { wch: 15 }  // Next Follow Up
+    { wch: 12 }  // Status
   ];
   ws['!cols'] = colWidths;
   
@@ -2000,7 +1996,7 @@ function processExcelFile(file) {
 
       // Required claim fields
       const requiredFields = [
-        "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket"
+        "Claim #", "Account #", "Patient Name", "Date of Service (D.O.S)", "Visit Type", "Primary Payer", "Billed Charges", "Balance", "Age (Days)", "Age Bucket", "Priority"
       ];
       const importError = document.getElementById('importError');
       importError.style.display = 'none';
